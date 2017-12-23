@@ -1,6 +1,108 @@
-!! Mini limited scheme
+!! Physche: A limited small Scheme
+
+
+We will start with the limited version of Physche our small scheme. In this version we will not support the definition new functions. In the second version we will support function definition and in particular closures. 
 
 !!! Scheme in a super nutshell
+
+Our objective here is not to write a Scheme following the latest language specification. We will just cover a subset.
+Again purists may be not like what I will write but we should take it as a pretext for exploration.
+I will present only the parts that we will implement. In Physche we do not cover vectors, dotted pairs, continuations, macros.
+
+For a fast yet more complete description of Scheme I like ''Teach yourself Scheme in fixnum days'' by Dorai Sitaram *http://ds26gte.github.io/tyscheme/index.html*.
+
+
+!!!! S-Expressions
+In Scheme everything is a s-expression. S-expressions can be:
+- atomic for booleans, number, symbols (we will treat strings as atomic),
+- compound with lists, lists which also represent procedure applications, and 
+- procedures, procedures can be normal (i.e., evaluating all their arguments) or special-forms (i..e, having special ways to evaluate their arguments needed to build control-flow for example).
+
+!!!! List as data
+A list starts with the opening parenthesis and finish by a closing one. To manipulate a list we can simply quote it. 
+The following primitive procedures allows one to manipulate lists: ==car== (to access the first element), ==cdr== (to access the rest of the list), ==cons== (to create a list) and ==()== represents the empty list. 
+
+[[[
+(quote (1 2 3 4))
+>>>  (1 2 3 4)
+]]]
+
+[[[
+(car (quote (1 2 3 4)))
+>>> 1
+]]]
+
+[[[
+(cdr (quote (1 2 3 4)))
+>>> (2 3 4)
+]]]
+
+[[[
+(cons 1 (quote (2 3 4)))
+>>> (1 2 3 4)
+]]]
+
+!!!! About procedure application
+
+Scheme follows a prefix syntax where the first element refers to a function and the rest are arguments whose values is passed to the function.
+Here the procedure associated to the symbol ==cons== is applied to the value 1 and the value of the expression ==(cons 2 (quote (3 4))==. 
+
+[[[
+(cons 1 (cons 2 (quote (3 4))))
+>>> (1 2 3 4)
+]]]
+
+!!!! Define variable 
+
+To define  a variable and set  its value, we use ==define== special form: it sets the value of the second argument to symbol represented by the first argument
+
+[[[
+(define pi 3.14)
+(define goldenRatio (/ (+ 1 (sqrt 5)) 2))
+]]]
+
+!!!! Defining procedure
+
+To define a procedure we use the ==lambda== special form. Its first argument is a list representing the procedure argument and the second argument the body of the procedure. 
+
+[[[
+((lambda (x)
+	(+ 2 x))
+	3)
+>>> 5
+]]]
+
+Of course we can assign procedure to variable using ==define==.
+
+[[[
+(define add2 (lambda (x) (+ 2 x)))
+(add2 3)
+>>> 5
+(add2 33)
+>>> 35
+]]]
+
+!!!! Special-forms
+As we saw some procedure evaluate all their arguments while other should not. 
+This is the case for ==define==, ==lambda==, ==quote== and ==if==.
+Such procedures are called special-forms and we will have the define their semantics.
+
+
+!!!! Program as data
+What is particularly interesting is that the syntax of the language is centered on the one of lists and by just using a single quote or the special function ==quote== we can turn a program into an abstract syntax tree. 
+
+In the following example we can access the argument of the ==\+== invocation by simple quoting the invocation and accessing using plain list operator such as ==cdr==.
+
+[[[
+(cdr '(+ 2 3))
+>>> (2 3)
+]]]
+
+!!! Physche's overview
+
+Since we do not want to have to build a full parser, we will bend a bit the syntax of Physche to be compatible with the one of Pharo. 
+
+For example, the booleans will be represented as true and false instead of ==#t== and ==#f==.
 
 !!! Parsing
 
