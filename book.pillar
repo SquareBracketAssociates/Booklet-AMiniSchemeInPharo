@@ -1,0 +1,8 @@
+In this booklet we will build together a little interpreter for a subset of Scheme. 
+Doing so we will explore several concepts: 
+- limited parsing
+- basic interpreter 
+- closure concepts and interpreter
+
+${inputFile:Chapters/Scheme.pillar}$
+
