@@ -1,4 +1,4 @@
-In this booklet we will build together a little interpreter for a subset of the Scheme language, we called this language Physche. The idea to implement as simply as possible to illustrate the key aspects and share with you the fun of building language interpreters.
+In this booklet we will build together a little interpreter for a subset of the Scheme language, we called this language Physche. The idea is to implement as simply as possible to illustrate the key aspects and share with you the fun of building language interpreters.
 Doing so we will explore several concepts: 
 - limited parsing
 - basic interpreter, and  
@@ -6,13 +6,13 @@ Doing so we will explore several concepts:
 
 
 
-As future readings, we suggest Structure and Interpretation of Computer Programs by Abselson, Sussman and Sussman. I love it. For reading people the excellent book of Jacques Chazarain (which one the person who taught me Lisp) "Programmer avec Scheme" by International Thomson Publishing.
+As future readings, we suggest ''Structure and Interpretation of Computer Programs'' by Abselson, Sussman and Sussman. I simply love it. For reading people the excellent book of Jacques Chazarain (which one the person who taught me Lisp) "Programmer avec Scheme" by International Thomson Publishing.
 
-
-A more personal note. We will implement a subset of Scheme because the language is simple but not trivial, really powerful and also because I love it. And while Pharo is my favorite language, it always has the taste of a Lisp language but with lovely objects. Since I implemented several mini schemes in Scheme, I got inspired by the (How to Write a (Lisp) Interpreter (in Python)) post of Peter Norvig to write one in Pharo for fun. 
+A more personal note. We will implement a subset of Scheme because the language is simple but not trivial, really powerful and also because I love it. And while Pharo is my favorite language, it always has the taste of a Lisp language but with lovely objects. Since I implemented several mini Schemes in Scheme, I got inspired by the (How to Write a (Lisp) Interpreter (in Python)) post of Peter Norvig to write one in Pharo for fun. 
 
 Please contact me if you noticed I wrote something wrong or not fully precise. 
-S. Ducasse
+
+S. Ducasse (stephane.ducasse@inria.fr)
 23 December 2017
 
 ${inputFile:Chapters/Scheme.pillar}$
