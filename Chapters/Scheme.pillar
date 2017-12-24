@@ -79,7 +79,7 @@ Of course we can assign procedure to variable using ==define==.
 ]]]
 
 !!!! Quote
-==quote== is an interesting special form: it does not evaluate its argument but return it. 
+==quote== is an interesting special form: it does not evaluate its argument but return it. It is useful when manipulating lists. 
 
 [[[
 (quote 1)
@@ -131,19 +131,66 @@ The following primitive procedures allows one to manipulate lists: ==car== (to a
 ]]]
 
 
-
-
-
-
-
-
 !!! Physche's overview
 
-Since we do not want to have to build a full parser, we will bend a bit the syntax of Physche to be compatible with the one of Pharo. 
+Since we do not want to have to build a full parser, we will bend a bit the syntax of Physche to be compatible with the one of Pharo.
+- Booleans will be represented as ==true== and ==false== instead of ==#t== and ==#f==.
+- Numbers will be the one of Pharo.
+- Symbols and strings will be the ones of Pharo:  ==#pharo== and == 'pharo'==.
+- Lists will be represented as arrays to be able to get benefit from the scanner facilities of Pharo as we will explained just after. The empty list is represented by ==#()==.
 
-For example, the booleans will be represented as true and false instead of ==#t== and ==#f==.
+We are now ready to implement the first version of Physche. 
+
+
+!! Implementing Physche
+
+We will start to implement a simple parser. Then we will define an interpreter. 
 
 !!! Parsing
+
+When implementing language compilers, parsing is the process to takes a text as input and produces an abstract representation of the program. This process is often composed of a scanner and a parser. The scanner cuts the text into  a list of tokens. And the parser consumes this list of tokens to build an intermediate representation such as an abstract syntax tree. This abstract syntax tree is then analyzed, annotated, transformed by a compiler to finally generate different code (bytecode or assembly). The generated code embeds the semantics of the implemented language.
+
+In our interpreter we will take a simpler route. Since Scheme syntax is simple we will just use a simple scanner and our interpreter will take as input the tokens produced by the scanner. 
+
+
+Let us start by defining some tests to drive the development of Psyche's interpreter.
+
+[[[
+TestCase subclass: #PhsycheTest
+	instanceVariableNames: 'ph'
+	classVariableNames: ''
+	package: 'Phsyche'
+]]]
+
+[[[
+PhsycheTest >> setUp
+	ph := Phsyche new
+]]]
+
+[[[
+PhsycheTest >> testParseLambda
+	self 
+		assert: (ph parse: '(define squared (lambda (x) (* x x)))') 
+		equals: #(#define #squared #(#lambda #(#x) #(* x x)))
+]]]
+
+[[[
+PhsycheTest >> testParseEmptyList
+	self assert: (ph parse: '()') equals: #()
+]]]
+
+[[[
+Object subclass: #Phsyche
+	instanceVariableNames: ''
+	classVariableNames: ''
+	package: 'Phsyche'
+]]]
+
+parse: aProgramString
+	aProgramString ifEmpty: [ ^ #() ].
+	^ (Scanner new scanTokens: aProgramString) first 
+
+
 
 !!! Setting up the primitives
 
