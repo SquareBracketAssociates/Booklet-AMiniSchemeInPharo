@@ -11,7 +11,22 @@ Our objective here is not to write a Scheme following the latest language specif
 
 For a fast yet more complete description of Scheme I like ''Teach yourself Scheme in fixnum days'' by Dorai Sitaram *http://ds26gte.github.io/tyscheme/index.html*.
 
+Here is simple function expressing the length of a list and one example. 
 
+
+[[[
+(define len2 
+  (lambda (l)
+	(if (null? l)
+		0
+		(+ 1 (len2 (cdr l))))))
+]]]
+There is another way to define function but we use this one with explicit use of ==lambda==.
+
+[[[
+(len (list 4 1 3 3))
+>>> 4
+]]]
 
 !!!! S-Expressions
 In Scheme, everything is a s-expression. A S-expression can be:
@@ -142,17 +157,26 @@ Since we do not want to have to build a full parser, we will bend a bit the synt
 We are now ready to implement the first version of Physche. 
 
 
+
+
 !! Implementing Physche
 
-We will start to implement a simple parser. Then we will define an interpreter. 
+We will start to implement a extremely simple parser. Then we will define an interpreter for a limited version of the language.
 
-!!! Parsing
+!!! Simple interpretation architecture
 
-When implementing language compilers, parsing is the process to takes a text as input and produces an abstract representation of the program. This process is often composed of a scanner and a parser. The scanner cuts the text into  a list of tokens. And the parser consumes this list of tokens to build an intermediate representation such as an abstract syntax tree. This abstract syntax tree is then analyzed, annotated, transformed by a compiler to finally generate different code (bytecode or assembly). The generated code embeds the semantics of the implemented language.
+When implementing language compilers, parsing is the process to takes a text as input and produces an abstract representation of the program (see Figure ""\*@naiveChain\*""). This process is often composed of a scanner and a parser. The scanner cuts the text into a list of tokens. And the parser consumes this list of tokens to build an intermediate representation such as an abstract syntax tree. This abstract syntax tree is then analyzed, annotated, transformed by a compiler to finally generate different code (bytecode or assembly). The generated code embeds the semantics of the implemented language.
 
-In our interpreter we will take a simpler route. Since Scheme syntax is simple we will just use a simple scanner and our interpreter will take as input the tokens produced by the scanner. 
++A naive compilation chain.>file://figures/naiveChain.pdf|width=60|label=naiveChain+
+
+Beside having a compiler, we can also have an interpreter, i.e., a program that executes programs of the implemented language. The idea is that the interpreter will consume the intermediate representation and act adequately. For example, when it sees a variable definition, it will declare in a structure (usually an environment) a binding for such variable.
+
+Note that the view depicted in Figure ""\*@naiveChain\*"" is naive in sense the compiler may also emit abstract instructions (for example bytecode) that will be interpreted by an (bytecode) interpreter and may converted on the fly to assembly code. This is what is what the Pharo Virtual Machine is doing.
+
+In our interpreter we will take a simpler route. Since Scheme syntax is simple we will just use a simple scanner and our interpreter will take as input the tokens produced by the scanner. We will use the natural structure of the arrays as simple abstract syntax trees.
 
 
+!!! Starting
 Let us start by defining some tests to drive the development of Psyche's interpreter.
 
 [[[
@@ -167,6 +191,8 @@ PhsycheTest >> setUp
 	ph := Phsyche new
 ]]]
 
+In the following test we see that we use the natural nesting of arrays of Pharo to represent Scheme lists. 
+
 [[[
 PhsycheTest >> testParseLambda
 	self 
@@ -174,10 +200,36 @@ PhsycheTest >> testParseLambda
 		equals: #(#define #squared #(#lambda #(#x) #(* x x)))
 ]]]
 
+Here we check that an empty list is recognised as an empty array. 
 [[[
 PhsycheTest >> testParseEmptyList
 	self assert: (ph parse: '()') equals: #()
 ]]]
+
+[[[
+PhsycheTest >> testParseFloat
+	self 
+		assert: (ph parse: '12.33')
+		equals: 12.33
+]]]
+
+[[[
+PhsycheTest >> testParseSymbol
+	self 
+		assert: (ph parse: 'r')
+		equals: #r
+]]]
+
+[[[
+PhsycheTest >> testParseIsNull
+	self assert: (ph parse: '(isNull (cons (quote a) #()))') equals: #(#isNull #(#cons #(#quote #a) #())).
+	self assert: (ph parse: '(isNull (cons (quote a) ()))') equals: #(#isNull #(#cons #(#quote #a) #()))
+]]]
+
+
+!!! Parsing input text
+
+Now we are ready to implement the ==parse:== method. We create the class Phsyche which is the language interperter.
 
 [[[
 Object subclass: #Phsyche
@@ -186,13 +238,64 @@ Object subclass: #Phsyche
 	package: 'Phsyche'
 ]]]
 
-parse: aProgramString
+To implement the ==parse:== method we take advantage of the Pharo's ==Scanner== and the fact that we map list to arrays.
+Note that this implementation can be really bent and it absoluletely not robust but it serves our teaching purpose.
+
+[[[
+Phsyche >> parse: aProgramString
 	aProgramString ifEmpty: [ ^ #() ].
 	^ (Scanner new scanTokens: aProgramString) first 
+]]]
 
+As extension, we suggest to represente lists with pairs as in traditional Lisp and Scheme and to do so to define a better parser.
 
+!!! Evaluating elementary elements
+
+Let us start to specify the expected behavior of the language evaluation.
+
+[[[
+PhsycheTest >> testEvalBoolean
+	self assert: (ph eval: (ph parse: 'true')) equals: true.
+	self assert: (ph eval: (ph parse: 'false')) equals: false.
+]]]
+
+[[[
+PhsycheTest >> testEvalString
+	self assert: (ph eval: (ph parse: 'pharo')) equals: 'pharo'.
+	self assert: (ph eval: (ph parse: 'tintin')) equals: 'tintin'.
+]]]
+
+[[[
+PhsycheTest >> testEvalNumber
+	self assert: (ph eval: (ph parse: '12')) equals: 12.
+	self assert: (ph eval: (ph parse: '3.14')) equals: 3.14.
+]]]
+
+[[[
+PhsycheTest >> testEvalSymbol
+	self assert: (ph eval: (ph parse: '#pharo')) equals: #pharo.
+	self assert: (ph eval: (ph parse: '#tintin')) equals: #tintin.
+]]]
+
+Now we can add the following method to Phsyche
+
+[[[
+Phsyche >> eval: expression
+
+	^ expression 
+]]]
+
+Quite limited and trivial so far. 
 
 !!! Setting up the primitives
+
+
+
+
+
+
+
+
 
 !!! Environment and Eval
 
