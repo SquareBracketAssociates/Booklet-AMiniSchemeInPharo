@@ -165,13 +165,13 @@ We will start to implement a extremely simple parser. Then we will define an int
 
 !!! Simple interpretation architecture
 
-When implementing language compilers, parsing is the process to takes a text as input and produces an abstract representation of the program (see Figure ""\*@naiveChain\*""). This process is often composed of a scanner and a parser. The scanner cuts the text into a list of tokens. And the parser consumes this list of tokens to build an intermediate representation such as an abstract syntax tree. This abstract syntax tree is then analyzed, annotated, transformed by a compiler to finally generate different code (bytecode or assembly). The generated code embeds the semantics of the implemented language.
+When implementing language compilers, parsing is the process to takes a text as input and produces an abstract representation of the program (see Figure *@naiveChain*). This process is often composed of a scanner and a parser. The scanner cuts the text into a list of tokens. And the parser consumes this list of tokens to build an intermediate representation such as an abstract syntax tree. This abstract syntax tree is then analyzed, annotated, transformed by a compiler to finally generate different code (bytecode or assembly). The generated code embeds the semantics of the implemented language.
 
 +A naive compilation chain.>file://figures/naiveChain.pdf|width=60|label=naiveChain+
 
 Beside having a compiler, we can also have an interpreter, i.e., a program that executes programs of the implemented language. The idea is that the interpreter will consume the intermediate representation and act adequately. For example, when it sees a variable definition, it will declare in a structure (usually an environment) a binding for such variable.
 
-Note that the view depicted in Figure ""\*@naiveChain\*"" is naive in sense the compiler may also emit abstract instructions (for example bytecode) that will be interpreted by an (bytecode) interpreter and may converted on the fly to assembly code. This is what is what the Pharo Virtual Machine is doing.
+Note that the view depicted in Figure *@naiveChain* is naive in sense the compiler may also emit abstract instructions (for example bytecode) that will be interpreted by an (bytecode) interpreter and may converted on the fly to assembly code. This is what is what the Pharo Virtual Machine is doing.
 
 In our interpreter we will take a simpler route. Since Scheme syntax is simple we will just use a simple scanner and our interpreter will take as input the tokens produced by the scanner. We will use the natural structure of the arrays as simple abstract syntax trees.
 
