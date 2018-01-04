@@ -254,6 +254,12 @@ As extension, we suggest to represente lists with pairs as in traditional Lisp a
 Let us start to specify the expected behavior of the language evaluation.
 
 [[[
+PhsycheTest >> testEvalEmptyList
+	self assert: (ph eval: (ph parse: '()')) equals: #()
+]]]
+
+
+[[[
 PhsycheTest >> testEvalBoolean
 	self assert: (ph eval: (ph parse: 'true')) equals: true.
 	self assert: (ph eval: (ph parse: 'false')) equals: false.
@@ -286,6 +292,44 @@ Phsyche >> eval: expression
 ]]]
 
 Quite limited and trivial so far. 
+
+
+!!! Defining a variable
+
+Now we will add support for the first special form: ==define==. 
+We will start with support the definition of variables. 
+
+Here is a test showing the behavior we expect. 
+[[[
+PhsycheTest >> testEvalExpression
+	(ph eval: (ph parse: '(define pi 3.14)')).
+	self 
+		assert: (ph eval: (ph parse: 'pi'))
+		equals:  3.14.
+]]]
+
+First we should add a dictionary that will hold the defined variables and their values. 
+
+[[[
+Phsyche >> initialize
+	super initialize.
+	environment := Dictionary new
+]]]
+
+[[[
+Phsyche >> eval: expression
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ env at: expression ]. "returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			first = #define
+				ifTrue: [ ^ env at: expression second put: (self eval: expression third) ] ]
+]]]
+
 
 !!! Setting up the primitives
 
