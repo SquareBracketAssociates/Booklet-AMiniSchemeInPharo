@@ -479,13 +479,23 @@ Phsyche >> smallerOrEqualBinding
 	^ #< -> [ :e :v | e <= v ]
 ]]]
 
-!!!! Adding substraction
+!!!! Adding substraction and division
 
 [[[
 Phsyche >> minusBinding
 	^ #- -> [ :e :v | e - v ]
 ]]]
 
+[[[
+Phsyche >> divisionBinding
+	^ #/ -> [ :e :v | (e / v) asFloat ]
+]]]
+
+
+[[[
+PhsycheTest >> testDivision
+	self should: [ ph eval: (ph parse: '(/ 5 0)') ] raise: ZeroDivide
+]]]
 
 !!!! Adding not 
 
@@ -552,9 +562,52 @@ Phsyche >> isNullBinding
 	^ #isNull -> [ :l | l = #() ]
 ]]]
 
+!!! Adding if
+
+Now we are ready to implement ==if==. If is a special form since it does not evaluate all its arguments. Indeed, ==if== should only evaluate the correct argument based on the boolean value. 
 
 
-!!! Environment and Eval
+[[[
+PhsycheTest >> testEvalIf
+	self assert: (ph eval: (ph parse: '(if true 4 5)')) equals: 4.
+	self assert: (ph eval: (ph parse: '(if false 4 5)')) equals: 5
+]]]
 
-!! Closures in miniScheme
+Well we can do better. Since numbers are auto-evaluating, this test does not verify that only one branch is evaluated. 
+Let us use a division by zero checks that for us as follows: 
+[[[
+PhsycheTest >> testEvalIfNoSpurious
+	self assert: (ph eval: (ph parse: '(if true 4 (/ 5 0))')) equals: 4.
+	self assert: (ph eval: (ph parse: '(if false (/ 5 0) 5)')) equals: 5
+]]]
+
+Now we can define the ==if== special form. 
+
+[[[
+Physche >> eval: expression
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ (environment at: first)
+						valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
+				ifFalse: [ 
+					first = #define
+						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+					first = #if
+						ifTrue: [ ^ (self eval: expression second)
+								ifTrue: [ self eval: expression third ]
+								ifFalse: [ self eval: expression fourth ] ].
+					first = #quote
+						ifTrue: [ ^ expression second ] ] ]
+]]]
+
+Now all our lovely tests are passing. 
+
+!! Closures in Phsyche
 
