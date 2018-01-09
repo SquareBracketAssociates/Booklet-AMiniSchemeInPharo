@@ -426,7 +426,7 @@ Phsyche >> eval: expression
 		expression = #()
 			ifTrue: [ ^ expression ].
 		expression isSymbol
-			ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+			ifTrue: [ ^ environment at: expression ].  "returns the variable value"
 		expression isArray
 			ifFalse: [ "returns literals boolean, string, number" ^ expression ]
 			ifTrue: [ | first |
@@ -438,7 +438,6 @@ Phsyche >> eval: expression
 							ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
 						first = #quote
 							ifTrue: [ ^ expression second ] ] ]
-
 ]]]
 
 
@@ -447,15 +446,111 @@ At this point our tests should all pass.
 !!!! Some consideration
 Note that for not we consider that the mathematical operations are only working on pairs and not list of elements. We can do this changing the closure application. Another to consider is that explicit check for primitives prevent us to overload locally their definition.
 
-!!! Adding more primitives and tests
+
+!!!! Some more arithmetic primitives
+
+[[[
+Phsyche >> isEqualBinding
+	^ #equal -> [ :e :v | e = v ]
+]]]
+
+[[[
+Phsyche >> greaterOrEqualBinding
+	^ #>= -> [ :e :v | e >= v ]
+]]]
+
+[[[
+Phsyche >> isEqualBinding
+	^ #equal -> [ :e :v | e = v ]
+]]]
+
+[[[
+Phsyche >> minusBinding
+	^ #- -> [ :e :v | e - v ]
+]]]
+
+[[[
+Phsyche >> smallerBinding
+	^ #< -> [ :e :v | e < v ]
+]]]
+
+[[[
+Phsyche >> smallerOrEqualBinding
+	^ #< -> [ :e :v | e <= v ]
+]]]
+
+!!!! Adding substraction
+
+[[[
+Phsyche >> minusBinding
+	^ #- -> [ :e :v | e - v ]
+]]]
 
 
+!!!! Adding not 
+
+[[[
+PhsycheTest >> testNot
+	self assert: (ph eval: (ph parse: '(not false)')).
+	self deny: (ph eval: (ph parse: '(not true)'))
+]]]
+
+[[[
+PhsycheTest >> isNotBinding
+	^ #not -> [ :a | a not ]
+]]]
+
+!!! Adding list primitives
 
 
+[[[
+PhsycheTest >> testEvalListExpression
+	self assert: (ph eval: (ph parse: '(cons (quote a) #())')) equals: #(a)
+]]]
 
 
+[[[
+PhsycheTest >> testEvalCarExpressionEvaluatesItsArgument
+	self
+		assert: (ph eval: (ph parse: '(car (cons (quote a) (cons (quote b) #())))'))
+		equals: #a
+]]]
 
 
+[[[
+PhsycheTest >> testEvalCdrExpressionEvaluatesItsArgument
+	self assert: (ph eval: (ph parse: '(cdr (quote (quote a)))')) equals: #(a)
+]]]
+
+[[[
+PhsycheTest >> testIsNull
+	self assert: (ph eval: (ph parse: '(isNull #())')).
+	self deny: (ph eval: (ph parse: '(isNull (cons (quote a) #()))'))
+]]]
+
+
+Here are the primitives definitions. 
+
+
+[[[
+Phsyche >> carBinding
+	^ #car -> [ :l | l first ]
+]]]
+
+[[[
+Phsyche >> cdrBinding
+	^ #cdr -> [ :l | l allButFirst ]
+]]]
+
+[[[
+Phsyche >> consBinding
+	^ #cons -> [ :e :l | {e} , l ]
+]]]
+
+[[[
+Phsyche >> isNullBinding
+	^ #isNull -> [ :l | l = #() ]
+]]]
 
 
 
