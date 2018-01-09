@@ -266,22 +266,11 @@ PhsycheTest >> testEvalBoolean
 ]]]
 
 [[[
-PhsycheTest >> testEvalString
-	self assert: (ph eval: (ph parse: 'pharo')) equals: 'pharo'.
-	self assert: (ph eval: (ph parse: 'tintin')) equals: 'tintin'.
-]]]
-
-[[[
 PhsycheTest >> testEvalNumber
 	self assert: (ph eval: (ph parse: '12')) equals: 12.
 	self assert: (ph eval: (ph parse: '3.14')) equals: 3.14.
 ]]]
 
-[[[
-PhsycheTest >> testEvalSymbol
-	self assert: (ph eval: (ph parse: '#pharo')) equals: #pharo.
-	self assert: (ph eval: (ph parse: '#tintin')) equals: #tintin.
-]]]
 
 Now we can add the following method to Phsyche
 
@@ -321,17 +310,146 @@ Phsyche >> eval: expression
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
-		ifTrue: [ ^ env at: expression ]. "returns the variable value"
+		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
 	expression isArray
 		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
 		ifTrue: [ | first |
 			first := expression first.
 			first = #define
-				ifTrue: [ ^ env at: expression second put: (self eval: expression third) ] ]
+				ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ] ]
+]]]
+
+The following test shows that the a variable points to a value. 
+
+[[[
+PhsycheTest >> testEvalExpression2
+	ph eval: (ph parse: '(define pi 3.14)').
+	ph eval: (ph parse: '(define pi2 pi)').
+	ph eval: (ph parse: '(define pi 6.28)').
+	self assert: (ph eval: (ph parse: 'pi2')) equals: 3.14
+]]]
+
+!!! Introducing Quote
+
+Quote is an interesting special form. It is the one that does not evaluate its argument.
+
+[[[
+PhsycheTest >> testEvalQuote
+	self assert: (ph eval: (ph parse: '(quote (* x x))')) equals: #(#* #x #x).
+	self assert: (ph eval: (ph parse: '(quote (quote (* x x)))')) equals: #(quote #(#* #x #x))
+]]]
+
+[[[
+Phsyche >> eval: expression
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			first = #define
+				ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+			first = #quote
+				ifTrue: [ ^ expression second ] ]
 ]]]
 
 
+
 !!! Setting up the primitives
+
+Now will introduce some primitives behavior such as addition, multiplication, list manipulation. In this implementation of Physche we will define them as block closures (a more object-oriented implementation reifying the operations is possible). Let us write a test first to specify what we want to get.
+
+[[[
+PhsycheTest >> testEvalExpression
+	self assert: (ph eval: (ph parse: '(* 3 8)')) equals: 24
+]]]
+
+[[[
+PhsycheTest >> testEvalMoreComplexExpression
+	self assert: (ph eval: (ph parse: '(* (+ 2 3) 8)')) equals: 40.
+	self assert: (ph eval: (ph parse: '(* 8 (+ 2 3))')) equals: 40
+]]]
+
+We define then for example the multiplication and addition: 
+[[[
+Phsyche >> multBinding
+	^ #* -> [:e :v | e * v]
+]]]
+
+[[[
+Phsyche >> plusBinding
+	^ #+ ->  [:e :v | e + v]
+]]]
+
+The method ==multBinding== is return a pair the primitive name and its associated closures.
+The primitive name will be added as a variable in the environement and its value will be the corresponding block.
+
+Now we define the following method to automatically executing all the method ending with 'Binding' to add the primitives to the environment. We take the opportunity to add the primitive name to the list of primitives since it will help use later during the evaluation. 
+
+[[[
+Phsyche >> initializeEnvBindings
+	(self class selectors select: [ :each | each endsWith: 'Binding' ])
+		do: [ :s | 
+				| b |
+				b := self perform: s. 
+				primitives add: b key. 
+				environment at: b key put: b value ]
+]]]
+
+[[[
+Object subclass: #Phsyche
+	instanceVariableNames: 'environment primitives'
+	classVariableNames: ''
+	package: 'Phsyche'
+]]]
+
+We redefine the ==initialize== method to initialize the primitive name container and call the ==initializeEnvBindings== method. 
+
+[[[
+Phsyche >> initialize
+		super initialize.
+		environment := Dictionary new. 
+		primitives := OrderedCollection new. 
+		self initializeEnvBindings 
+]]]
+
+
+Now we should change the ==eval:== method to take into account that we have now to support primitives call. 
+What is interesting is that we have to be clear about the semantic of primitive execution, obviously.
+We know that we can get the closure associated to the primitive name in the environment,  and a primitive should evaluate all its arguments and pass to the closure. 
+
+
+[[[
+Phsyche >> eval: expression
+		expression = #()
+			ifTrue: [ ^ expression ].
+		expression isSymbol
+			ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+		expression isArray
+			ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+			ifTrue: [ | first |
+				first := expression first.
+				(primitives includes: first)
+					ifTrue: [ ^ (environment at: first)
+							valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
+					ifFalse: [ first = #define
+							ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+						first = #quote
+							ifTrue: [ ^ expression second ] ] ]
+
+]]]
+
+
+At this point our tests should all pass. 
+
+!!!! Some consideration
+Note that for not we consider that the mathematical operations are only working on pairs and not list of elements. We can do this changing the closure application. Another to consider is that explicit check for primitives prevent us to overload locally their definition.
+
+!!! Adding more primitives and tests
+
+
 
 
 
