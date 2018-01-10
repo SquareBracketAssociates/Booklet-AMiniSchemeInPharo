@@ -609,5 +609,8 @@ Physche >> eval: expression
 
 Now all our lovely tests are passing. 
 
+Now our implementation is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter.
+
+
 !! Closures in Phsyche
 
