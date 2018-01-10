@@ -1,0 +1,45 @@
+language: smalltalk
+sudo: false
+
+os:
+  - osx
+
+smalltalk:
+  - Pharo-6.1
+
+# Unit tests run the normal pillar tests
+# Integration tests test that pillar itself can interact with generated files, pdf generation, etc.
+# System tests test that we can install and use pillar as a black box
+env:
+  matrix:
+  - JOB=test TYPE=System ARCHETYPE=book OUTPUT=pdf
+
+install:
+  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then . scripts/travis/ensure_latex.sh; fi
+  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then scripts/travis/ensure_book_dependencies.sh; fi
+  - if [[ ${TYPE} == "Integration" ]]; then mkdir -p $SMALLTALK_CI_BUILD; fi
+  - if [[ ${TYPE} == "Integration" ]]; then cp -r archetypes $SMALLTALK_CI_BUILD; fi
+  
+script:
+  - if [[ ${TYPE} == "System" ]]; then "scripts/system-tests/testarchetype.sh" ${ARCHETYPE} ${OUTPUT}; fi
+
+deploy:
+- provider: bintray
+  file: .bintray.json
+  on:
+    repo: SquareBracketAssociates/Booklet-AMiniSchemeInPharo
+  skip_cleanup: true
+  user: ducasse
+  key:
+    secure: RHcD1NoMnAE3dutCUDsJ/qLTVlMcKHOiu1nYd5NnCXq+Ti9A3ARl4TgUWUn3KFuR2ND0cnLsaZDtO66ylxK5tM5r60HxUtFDMmWTqUQHg7DuwZD7s4ipavTC1elSHd5jcnKRXvhtyK5VbmzGyA+IdJkJ0ZDSFy7csbKK7qYSU5luKkRGvfKgTLNeWrwksEKDnSH1sS9b0MdbXLvMGuEkFsasICZswEmIYMq3iWPzrcHoRRmTfZu+TMSzSe91YusVohcF1/0HHb9zLSKq1pNZ0YI/AukVvE8Cy4Rdq1ImHVUSjrPFtCxyrTXYoUJELMrR+gHwg+jtG4nBbj/4IT5bUM1qSiYWNIzUW11O3S5nop1/UnR2dPqaGjUAffFpqny7YyGLDyDHvxMRQTtrhoRWCNrzEcaBG38xs32xdVWyIkkZCkZusbRRj1gU+WUzKH5AZdLjk8+9Q2pXKfxS+D+w3Ypx7zfOx4OfvsxA62UV9vjprOgKIH22NPYxgQ4SOMzgkWPELXZhDWSRGnImurb+4fkUz8ReVb3phKrR7z6S9xRtt45gonp8TSlf/Q8y2FDzrp6kxb2eOCfu4CLCEv1eJy9RBoMaDWyzc6+GL4Zbm0phkEpExPBL0Et0SihHdmL7+0IEseyjkaO9MlbN5ctRlJjJ41FL3l0ISTnS6iph0VA=
+
+
+
+deploy:
+  provider: releases
+  file: pillar.zip
+  skip_cleanup: true
+  on:
+    tags:true
+  api_key:
+    secure: DdZ/hZsprzRFIye5mZHl15PnDfw9Ftll/1hedeevo6AjrkNwmZoPhy+eDhayYplK+PsXYGNSiBKf+P6lpNsXbkvGYMnPl3i3B5/hOzBnHE3+KHzfWP+UOPqsZaROHDf7/ntkpOTHNG2VEAq5Aklwm62NKfOXs95QVmI1myunaOzOuAiRVfBivltCa6rVaOZ25QDJobqtq5vCzvcp8r/f/IclprJhvhKAtGxaSdSWySC9BO2JQs7QMxft97GgB03MMl539N0Y0Bk12t+PfwJb7+AT3JS5wgp/4tb9AHWGbu9epOUZvOx6BDvwNZ2BrefllJC/0QFuqmohk1sWCbd5gO6JvKn/mFyFk3rzW3gqKZnet2iAI6cSUPrnBEhMIwL3SRPQ/xrNg0fExD0IS3UrN71Kt2BaeYSGAl9R4cRRIbBUqJ69HNi8n7chIjEEfAzWxMZFQfAYeNiwsoxw5BqANwIR/IM5wRCtUuqVkREk1FqJCsK3dRh4IYyCClI+B3hgwEliDhwT/00v/rGs1NQ2IGdq6aojbD07DFIZi5jFNDx5Ti8o/cc0MhQFOvtlfR1MdE0k0j8hCNo7BI5dYT7XBV9dM9yADurrUxUPcXxE4qiAvtkuPod6C/dSAOXYSvuT6LcwEb44BXBJopGbKj0B8EdyCJUtp4RIhMaD1DmVL4k=
