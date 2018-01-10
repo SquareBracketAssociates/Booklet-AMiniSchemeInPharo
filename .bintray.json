@@ -1,0 +1,27 @@
+{
+    "package": {
+        "name": "booklet-minischeme",
+        "repo": "wip",
+        "subject": "squarebracketassociates",
+        "desc": "Building a little functional language",
+        "licenses": ["MIT"],
+        "website_url": "https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo",
+        "issue_tracker_url": "https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/issues",
+        "vcs_url": "https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo.git",
+        "labels": ["work-in-progress"]
+    },
+
+    "version": {
+        "name": "latest",
+        "desc": "Latest successful build"
+    },
+
+    "files": [
+        {
+            "includePattern": "build/book.pdf",
+            "uploadPattern": "minischemebook-wip.pdf",
+            "matrixParams": { "override": 1 }
+        }
+    ],
+    "publish": true
+}
