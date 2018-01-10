@@ -7,7 +7,7 @@ We start by presenting the subset of Scheme that we will implement.
 
 !! Scheme in a (super) nutshell
 Our objective here is not to write a Scheme following the latest language specification.
- We will just cover a subset. Purists may be not like what I will write but we should take it as a pretext for exploration. I will present only the parts that we will implement. In Physche we do not cover vectors, dotted pairs, continuations, macros.
+ We will just cover a tiny subset. Purists may not like what I will write but I take this tiny subset as a pretext for a first exploration. I will present only the parts that we will implement. Physche does not support vectors, dotted pairs, continuations, macros.
 
 For a fast yet more complete description of Scheme I like ''Teach yourself Scheme in fixnum days'' by Dorai Sitaram *http://ds26gte.github.io/tyscheme/index.html*.
 
@@ -16,10 +16,10 @@ Here is simple function expressing the length of a list and one example.
 
 [[[
 (define len2 
-  (lambda (l)
-	(if (null? l)
-		0
-		(+ 1 (len2 (cdr l))))))
+	(lambda (l)
+		(if (null? l)
+			0
+			(+ 1 (len2 (cdr l))))))
 ]]]
 There is another way to define function but we use this one with explicit use of ==lambda==.
 
