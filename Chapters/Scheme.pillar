@@ -1,11 +1,11 @@
-!! Physche: A limited small Scheme
+
 
 We will start with a limited version of Physche, our small scheme implementation. In this version we will not support the definition new functions. In the second version we will support function definition and in particular closures. 
 
-We start by presentating the subset of Scheme that we will implement.
+We start by presenting the subset of Scheme that we will implement.
 
 
-!!! Scheme in a (super) nutshell
+!! Scheme in a (super) nutshell
 Our objective here is not to write a Scheme following the latest language specification.
  We will just cover a subset. Purists may be not like what I will write but we should take it as a pretext for exploration. I will present only the parts that we will implement. In Physche we do not cover vectors, dotted pairs, continuations, macros.
 
@@ -154,12 +154,13 @@ Since we do not want to have to build a full parser, we will bend a bit the synt
 - Symbols and strings will be the ones of Pharo:  ==#pharo== and == 'pharo'==.
 - Lists will be represented as arrays to be able to get benefit from the scanner facilities of Pharo as we will explained just after. The empty list is represented by ==#()==.
 
+
 We are now ready to implement the first version of Physche. 
+We will start with a first version that does not include closure and function definition. Then in a second iteration we will add closures and function definition. 
 
 
 
-
-!! Implementing Physche
+!! A parser for Physche
 
 We will start to implement a extremely simple parser. Then we will define an interpreter for a limited version of the language.
 
@@ -248,6 +249,12 @@ Phsyche >> parse: aProgramString
 ]]]
 
 As extension, we suggest to represente lists with pairs as in traditional Lisp and Scheme and to do so to define a better parser.
+
+
+!! Limited Physche 
+
+Now we will add the evaluation for the limited Physche that we mentioned previously: we will not manage function definition and closures. 
+
 
 !!! Evaluating elementary elements
 
@@ -612,5 +619,5 @@ Now all our lovely tests are passing.
 Now our implementation is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter.
 
 
-!! Closures in Phsyche
+!! Adding closures to  Phsyche
 
