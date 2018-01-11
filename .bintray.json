@@ -18,7 +18,7 @@
 
     "files": [
         {
-            "includePattern": "_result/pdf/book.pillar.pdf",
+            "includePattern": "_result/pdf/index.pillar.pdf",
             "uploadPattern": "minischemebook-wip.pdf",
             "matrixParams": { "override": 1 }
         }
