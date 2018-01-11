@@ -23,7 +23,8 @@ install:
   - if [[ ${TYPE} == "Integration" ]]; then cp -r archetypes $SMALLTALK_CI_BUILD; fi
   
 script:
-  - "pillar/pillar build pdf
+  - "pillar/pillar build pdf"
+#  - if [[ ${TYPE} == "System" ]]; then "pillar/scripts/system-tests/testarchetype.sh" ${ARCHETYPE} ${OUTPUT}; fi
 
 deploy:
 - provider: bintray
