@@ -35,7 +35,7 @@ In Scheme, everything is a s-expression. A S-expression can be:
 - a procedure:  procedures can be normal (i.e., evaluating all their arguments) or special-forms (i..e, having special ways to evaluate their arguments. This is needed to build control-flow for example).
 
 !!!! Values
-We will not present booleans, number and symbols in details but focus on the procedure applications since this is a much more interesting concept. Still there is one important point to raise: the value of an atomic expression is itself. This is important since we will see that the value of list is function application.
+We will npresent booleans, number and symbols in details but focus on the procedure applications since this is a much more interesting concept. Still there is one important point to raise: the value of an atomic expression is itself. This is important since we will see that the value of list is function application.
 
 [[[
 #t 
@@ -283,7 +283,6 @@ Now we can add the following method to Phsyche
 
 [[[
 Phsyche >> eval: expression
-
 	^ expression 
 ]]]
 
@@ -336,7 +335,7 @@ PhsycheTest >> testEvalExpression2
 	self assert: (ph eval: (ph parse: 'pi2')) equals: 3.14
 ]]]
 
-!!! Introducing Quote
+!!! Introducing quote
 
 Quote is an interesting special form. It is the one that does not evaluate its argument.
 
@@ -417,16 +416,15 @@ We redefine the ==initialize== method to initialize the primitive name container
 [[[
 Phsyche >> initialize
 		super initialize.
-		environment := Dictionary new. 
-		primitives := OrderedCollection new. 
-		self initializeEnvBindings 
+		environment := Dictionary new.
+		primitives := OrderedCollection new.
+		self initializeEnvBindings
 ]]]
 
 
-Now we should change the ==eval:== method to take into account that we have now to support primitives call. 
+Now we should change the ==eval:== method to take into account that we have now to support primitives call.
 What is interesting is that we have to be clear about the semantic of primitive execution, obviously.
-We know that we can get the closure associated to the primitive name in the environment,  and a primitive should evaluate all its arguments and pass to the closure. 
-
+We know that we can get the closure associated to the primitive name in the environment,  and a primitive should evaluate all its arguments and pass to the closure.
 
 [[[
 Phsyche >> eval: expression
@@ -504,7 +502,7 @@ PhsycheTest >> testDivision
 	self should: [ ph eval: (ph parse: '(/ 5 0)') ] raise: ZeroDivide
 ]]]
 
-!!!! Adding not 
+!!!! Adding not
 
 [[[
 PhsycheTest >> testNot
@@ -519,6 +517,10 @@ PhsycheTest >> isNotBinding
 
 !!! Adding list primitives
 
+Now we should add some primitives to manage list such as the elementary operations ==cons==, ==car==, and ==cdr==.
+
+Here are some tests to make sure that such primitives are acting as we expect it.
+Note that we expect consing is working only on list and does not produce dotted pairs.
 
 [[[
 PhsycheTest >> testEvalListExpression
@@ -547,7 +549,6 @@ PhsycheTest >> testIsNull
 
 
 Here are the primitives definitions. 
-
 
 [[[
 Phsyche >> carBinding
@@ -621,3 +622,119 @@ Now our implementation is really limited in the sense that we cannot add new fun
 
 !! Adding closures to  Phsyche
 
+Now we will add closures to Phsyche.
+
+!!! Closures
+
+[[[
+(define pi 3.14)
+(define area
+	(lambda (r)
+		(* pi (* r r))))
+]]]
+
+[[[
+(area 10)
+>>> 314
+]]]
+
+Let us analyse the definition and application of the function ==area==.
+What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During its execution it will get the value of the argument.
+
+Let us check that the argument value takes precedence over variables defined in outer scope.
+
+[[[
+(define r 5)
+(define pi 3.14)
+(define area
+	(lambda (r)
+		(* pi (* r r))))
+]]]
+
+[[[
+(area 10)
+>>> 314
+]]]
+
+It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
+
+!!! Defining an environment
+
+Let us define some tests...
+
+[[[
+TestCase subclass: #EnvironmentTest
+	instanceVariableNames: 'outer inner'
+	classVariableNames: ''
+	package: 'Physche'
+]]]
+
+Our setup makes sure that the inner environment is pointing to another context.
+[[[
+EnvironmentTest >> setUp
+	outer := Environment new.
+	inner := Environment new.
+	inner outerEnvironment: outer
+]]]
+
+The first test is to check that we can access the values set in the each level. 
+
+[[[
+EnvironmentTest >> testLookupAtRightLevel
+	outer at: #dad put: 'donald'.
+	self assert: (outer at: #dad) equals: 'donald'.
+	inner at: #son put: 'riri'.
+	self assert: (inner at: #son) equals: 'riri'
+]]]
+
+The second test is to check that we can reach the outer value from the inner one.
+
+[[[
+EnvironmentTest >> testLookingOuterFromInner
+	outer at: #dad put: 'donald'.
+	inner at: #son put: 'riri'.
+	self assert: (inner at: #dad) equals: 'donald'
+]]]
+
+The final test checks that unknown keys are not found.
+
+[[[
+EnvironmentTest >> testLookupInFails
+	outer at: #dad put: 'donald'.
+	inner at: #son put: 'riri'.
+	self should: [ outer at: #nodad ] raise: KeyNotFound.
+	self should: [ outer at: #noson ] raise: KeyNotFound.
+	self should: [ inner at: #nodad ] raise: KeyNotFound
+]]]
+
+
+!!! Implement environment
+
+[[[
+Dictionary subclass: #Environment
+	instanceVariableNames: 'outerEnvironment'
+	classVariableNames: ''
+	package: 'Physche'
+]]]
+
+
+We need an accessor to set the outer context.
+
+[[[
+Environment >> outerEnvironment: anEnvironment
+	outerEnvironment := anEnvironment
+]]]
+
+We redefine the method ==at:== so that we check if the value is defined locally. When this is the case we return it, else when there is an outer environment we recursively 
+try to access the value. When there is no outer environment we simply execute the default behavior.
+
+[[[
+Environment >> at: aKey
+	| value |
+	value := self at: aKey ifAbsent: [ nil ].
+	^ value
+		ifNil: [ outerEnvironment 
+			ifNil: [ super at: aKey ] 
+			ifNotNil: [ outerEnvironment at: aKey ] ]
+		ifNotNil: [ :v | v ]
+]]]
