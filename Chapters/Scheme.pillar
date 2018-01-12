@@ -659,7 +659,7 @@ Now the application.
 >>> 314
 ]]]
 
-+Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
++Function application creates an environment.>file://figures/areaEnvironments.pdf|width=60|label=areaEnvi+
 
 It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
 
