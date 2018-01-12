@@ -250,11 +250,12 @@ Phsyche >> parse: aProgramString
 
 As extension, we suggest to represente lists with pairs as in traditional Lisp and Scheme and to do so to define a better parser.
 
+Now we are ready to interpret the parsed programs.
+
 
 !! Limited Physche 
 
-Now we will add the evaluation for the limited Physche that we mentioned previously: we will not manage function definition and closures. 
-
+Now we will add the evaluation for the limited Physche that we mentioned previously: we will not manage function definition and closures.
 
 !!! Evaluating elementary elements
 
@@ -415,10 +416,10 @@ We redefine the ==initialize== method to initialize the primitive name container
 
 [[[
 Phsyche >> initialize
-		super initialize.
-		environment := Dictionary new.
-		primitives := OrderedCollection new.
-		self initializeEnvBindings
+	super initialize.
+	environment := Dictionary new.
+	primitives := OrderedCollection new.
+	self initializeEnvBindings
 ]]]
 
 
@@ -428,21 +429,21 @@ We know that we can get the closure associated to the primitive name in the envi
 
 [[[
 Phsyche >> eval: expression
-		expression = #()
-			ifTrue: [ ^ expression ].
-		expression isSymbol
-			ifTrue: [ ^ environment at: expression ].  "returns the variable value"
-		expression isArray
-			ifFalse: [ "returns literals boolean, string, number" ^ expression ]
-			ifTrue: [ | first |
-				first := expression first.
-				(primitives includes: first)
-					ifTrue: [ ^ (environment at: first)
-							valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
-					ifFalse: [ first = #define
-							ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
-						first = #quote
-							ifTrue: [ ^ expression second ] ] ]
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ environment at: expression ].  "returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ (environment at: first)
+						valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
+				ifFalse: [ first = #define
+						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+					first = #quote
+						ifTrue: [ ^ expression second ] ] ]
 ]]]
 
 
@@ -581,15 +582,16 @@ PhsycheTest >> testEvalIf
 	self assert: (ph eval: (ph parse: '(if false 4 5)')) equals: 5
 ]]]
 
-Well we can do better. Since numbers are auto-evaluating, this test does not verify that only one branch is evaluated. 
-Let us use a division by zero checks that for us as follows: 
+Well we can do better. Since numbers are auto-evaluating, this test does not verify that only one branch is evaluated.
+
+Let us use a division by zero checks that for us as follows:
 [[[
 PhsycheTest >> testEvalIfNoSpurious
 	self assert: (ph eval: (ph parse: '(if true 4 (/ 5 0))')) equals: 4.
 	self assert: (ph eval: (ph parse: '(if false (/ 5 0) 5)')) equals: 5
 ]]]
 
-Now we can define the ==if== special form. 
+Now we can define the ==if== special form.
 
 [[[
 Physche >> eval: expression
@@ -622,7 +624,7 @@ Now our implementation is really limited in the sense that we cannot add new fun
 
 !! Adding closures to  Phsyche
 
-Now we will add closures to Phsyche. A closure is a function capturing the environment in which is defined.
+Now we will add closures to Phsyche. A closure is a function capturing the environment in which is defined. We will start by implementing functions also called procedures in Scheme. For this we will need to define environments and a structure to represent function. Then we will
 
 !!! Function
 
@@ -635,6 +637,7 @@ Let us start with a first function definition.
 		(* pi (* r r))))
 ]]]
 
+Now we can execute the function: 
 [[[
 (area 10)
 >>> 314
@@ -663,7 +666,7 @@ Now the application.
 
 It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
 
-!!! Defining an environment
+!!! Defining an environment class
 Now we should define an environment. An environment is just a dictionary that when a binding is not found locally will continue the binding lookup in another environment called its parent or an outer scope. 
 
 
@@ -679,6 +682,7 @@ TestCase subclass: #EnvironmentTest
 ]]]
 
 Our setup makes sure that the inner environment is pointing to another context.
+
 [[[
 EnvironmentTest >> setUp
 	outer := Environment new.
@@ -717,7 +721,7 @@ EnvironmentTest >> testLookupInFails
 ]]]
 
 
-!!! Implement an environment
+!!! Implement an environment class
 
 [[[
 Dictionary subclass: #Environment
@@ -747,3 +751,52 @@ Environment >> at: aKey
 			ifNotNil: [ outerEnvironment at: aKey ] ]
 		ifNotNil: [ :v | v ]
 ]]]
+
+
+!!! Procedure definition
+
+We need a way to represent a function. Let us start to write a test. 
+
+[[[
+PhyscheTest >> testProcedureDefinition
+	| proc |
+	ph eval: (ph parse: '(define squared (lambda (x) (* x x)))').
+	proc := ph eval: (ph parse: #squared).
+	self assert: proc parameters equals: #(#x).
+	self assert: proc body equals: #(#* #x #x)
+]]]
+
+
+[[[
+Physche >> eval: expression
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ (environment at: first)
+						valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
+				ifFalse: [ first = #define
+						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+					first = #lambda
+						ifTrue: [ ^ Procedure new
+								parameters: expression second;
+								body: expression third ].
+					first = #if
+						ifTrue: [ ^ (self eval: expression second)
+								ifTrue: [ self eval: expression third ]
+								ifFalse: [ self eval: expression fourth ] ].
+					first = #quote
+						ifTrue: [ ^ expression second ] ] ]
+]]]
+
+
+Now we should define the class ==Procedure==. It is for now straightforward. 
+
+
+
+
