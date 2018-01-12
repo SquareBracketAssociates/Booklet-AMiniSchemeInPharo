@@ -794,9 +794,16 @@ Physche >> eval: expression
 						ifTrue: [ ^ expression second ] ] ]
 ]]]
 
-
+Note that this definition is not correct since it does not add the defining environment but we will do it later with closures.
 Now we should define the class ==Procedure==. It is for now straightforward. 
 
+[[[
+Object subclass: #Procedure
+	instanceVariableNames: 'parameters body'
+	classVariableNames: ''
+	package: 'Phsyche'
+]]]
 
+We should also define the accessors for its instance variables. 
 
 
