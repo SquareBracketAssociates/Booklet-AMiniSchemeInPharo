@@ -622,9 +622,11 @@ Now our implementation is really limited in the sense that we cannot add new fun
 
 !! Adding closures to  Phsyche
 
-Now we will add closures to Phsyche.
+Now we will add closures to Phsyche. A closure is a function capturing the environment in which is defined.
 
-!!! Closures
+!!! Function
+
+Let us start with a first function definition.
 
 [[[
 (define pi 3.14)
@@ -651,14 +653,21 @@ Let us check that the argument value takes precedence over variables defined in 
 		(* pi (* r r))))
 ]]]
 
+Now the application. 
 [[[
 (area 10)
 >>> 314
 ]]]
 
++Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
+
 It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
 
 !!! Defining an environment
+Now we should define an environment. An environment is just a dictionary that when a binding is not found locally will continue the binding lookup in another environment called its parent or an outer scope. 
+
+
++Examples of environment.>file://figures/twoEnvironment.pdf|width=60|label=twoEnvironment+
 
 Let us define some tests...
 
@@ -708,7 +717,7 @@ EnvironmentTest >> testLookupInFails
 ]]]
 
 
-!!! Implement environment
+!!! Implement an environment
 
 [[[
 Dictionary subclass: #Environment
