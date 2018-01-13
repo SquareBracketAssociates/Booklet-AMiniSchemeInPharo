@@ -662,7 +662,7 @@ Now the application.
 >>> 314
 ]]]
 
-+Function application creates an environment.>file://figures/areaEnvironments.pdf|width=60|label=areaEnvi+
++Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
 
 It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
 
@@ -670,7 +670,7 @@ It means that a function should have its own environment during application but 
 Now we should define an environment. An environment is just a dictionary that when a binding is not found locally will continue the binding lookup in another environment called its parent or an outer scope. 
 
 
-+Examples of environment.>file://figures/twoEnvironment.pdf|width=60|label=twoEnvironment+
++Examples of environment.>file://figures/twoEnvironments.pdf|width=60|label=twoEnvironment+
 
 Let us define some tests...
 
