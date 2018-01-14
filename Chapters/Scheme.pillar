@@ -1,13 +1,10 @@
 
-
-We will start with a limited version of Physche, our small scheme implementation. In this version we will not support the definition new functions. In the second version we will support function definition and in particular closures. 
-
-We start by presenting the subset of Scheme that we will implement.
-
-
 !! Scheme in a (super) nutshell
-Our objective here is not to write a Scheme following the latest language specification.
- We will just cover a tiny subset. Purists may not like what I will write but I take this tiny subset as a pretext for a first exploration. I will present only the parts that we will implement. Physche does not support vectors, dotted pairs, continuations, macros.
+
+We will start with a limited version of Physche, our small functional programming language inspired from Scheme. In the first version, we will not support the definition new functions (also called procedures). In the second version, we will support function definition and in particular closures. We start by presenting the subset of Scheme that we will implement.
+
+
+Our objective here is not to write a Scheme following the latest language specification. We will just cover a tiny subset. Purists may not like what I will write but I take this tiny subset as a pretext for a first exploration. I will present only the parts that we will implement. Physche does not support vectors, dotted pairs, continuations, macros.
 
 For a fast yet more complete description of Scheme I like ''Teach yourself Scheme in fixnum days'' by Dorai Sitaram *http://ds26gte.github.io/tyscheme/index.html*.
 
@@ -73,8 +70,8 @@ pi
 >>> 3.14
 ]]]
 
-!!!! Defining procedure
-To define a procedure we use the ==lambda== special form. Its first argument is a list representing the procedure argument and the second argument the body of the procedure. 
+!!!! Defining and applying procedures
+To define a procedure we use the ==lambda== special form. Its first argument is a list representing the procedure argument and the second argument the body of the procedure.  Then we apply this procedure to arguments (here 3) using the form ==(proc args)==.
 
 [[[
 ((lambda (x)
@@ -84,7 +81,6 @@ To define a procedure we use the ==lambda== special form. Its first argument is 
 ]]]
 
 Of course we can assign procedure to variable using ==define==.
-
 [[[
 (define add2 (lambda (x) (+ 2 x)))
 (add2 3)
@@ -101,14 +97,14 @@ Of course we can assign procedure to variable using ==define==.
 >>> 1
 ]]]
 
-The following expression returns then a list which looks like a function application but it just a list. 
+The following expression returns then a list which looks like a function application but it just a list.
+
 [[[
 (quote (quote 1))
 >>> (quote 1)
 ]]]
 
-This operation is so current that it has a special syntax: ==(quote x)== can be written =='x==.
-Physche will not support the =='== notation. 
+This operation is so current that it has a special syntax: ==(quote x)== can be written =='x==. Physche will not support the =='== notation.
 
 !!!! Program as data
 What is particularly interesting is that the syntax of the language is centered on the one of lists and by just using a single quote or the special function ==quote== we can turn a program into its abstract syntax tree.
@@ -121,9 +117,9 @@ In the following example we can access the argument of the ==\+== invocation by 
 ]]]
 
 !!!! List as data
- To manipulate a list we can simply quote it. 
+To manipulate a list we can simply quote it.
 
-The following primitive procedures allows one to manipulate lists: ==car== (to access the first element), ==cdr== (to access the rest of the list), ==cons== (to create a list) and ==()== represents the empty list. 
+The following primitive procedures allows one to manipulate lists: ==car== (to access the first element), ==cdr== (to access the rest of the list), ==cons== (to create a list) and ==()== represents the empty list.
 
 [[[
 (quote (1 2 3 4))
@@ -160,7 +156,7 @@ We will start with a first version that does not include closure and function de
 
 
 
-!! A parser for Physche
+!! A simple parser for Physche
 
 We will start to implement a extremely simple parser. Then we will define an interpreter for a limited version of the language.
 
@@ -656,7 +652,7 @@ Let us check that the argument value takes precedence over variables defined in 
 		(* pi (* r r))))
 ]]]
 
-Now the application. 
+Now the application.
 [[[
 (area 10)
 >>> 314
@@ -794,8 +790,7 @@ Physche >> eval: expression
 						ifTrue: [ ^ expression second ] ] ]
 ]]]
 
-Note that this definition is not correct since it does not add the defining environment but we will do it later with closures.
-Now we should define the class ==Procedure==. It is for now straightforward. 
+Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. Now we should define the class ==Procedure==. It is for now straightforward. 
 
 [[[
 Object subclass: #Procedure
@@ -805,5 +800,146 @@ Object subclass: #Procedure
 ]]]
 
 We should also define the accessors for its instance variables. 
+Now Physche supports the ''definition'' of procedures but not their application. 
+
+!!! Function application
+
+As we saw language following Lisp like syntax follow the pattern ==(proc args)== to mean that the function ==proc== is applied to the arguments ==args==.
+
+Let us write tests to control such a behavior. 
+
+[[[
+PhyscheTest >> testLambdaProcedureExecution
+	self assert: (ph eval: (ph parse: '((lambda (x) (* x x)) 3)')) equal: 9
+]]]
+
+[[[
+PhyscheTest >> testLambdaProcedureExecution
+	self assert: (ph eval: (ph parse: '((lambda (x) (* x x)) 3)')) equal: 9
+]]]
+
+[[[
+PhyscheTest >> testProcedureExecution
+	ph eval: (ph parse: '(define squared (lambda (x) (* x x)))').
+	self assert: (ph eval: (ph parse: '(squared 3)')) equals: 9
+]]]
+
+Again we will implement of function application step by step to understand the different aspects.
+
+What is important to see if that while executing a procedure body,  we have to have access to the environment, for example, to access primitive definitions. We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
+
+The not really good implementation is then the following. 
+
+[[[
+eval: expression
+	...
+		| proc res outerEnv innerProcEnv |
+		"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+		proc := self eval: first.
+		outerEnv := environment.
+		innerProcEnv := Environment
+			newFromKeys: proc parameters
+			andValues: (expression allButFirst collect: [ :e | self eval: e ]).
+		innerProcEnv outerEnvironment: environment.
+		environment := innerProcEnv.
+		res := self eval: proc body.
+		environment := outerEnv.
+		^ res ] ] ]
+]]]
 
 
+We create a new environment with the parameters and their values, we link this environment to its defining one so that primitive values can be found, we
+install this new environment and evalute the method body and reinstall the original environment and return the result. 
+
+With such implementation, all our tests should pass but this is not really a nice implementation and more important it does not support lexical closure. 
+
+!!! Studying a closure
+
+A closure is a function which contains a reference to the environment at its definition time. Since evaluating a lambda is like defining a temporary environment in which the parameters are bound, we can use this fact to create an environment local to a function. Let us have a look at a simple example:
+
+[[[
+	(
+	 ((lambda (x)
+	   (lambda (y)
+	     (+ x y)))
+	  3)
+	 7)
+>>> 10
+]]]
+
+The following subexpression returns a function adding 3 to its parameter ==y==. 
+
+[[[
+ ((lambda (x)
+   (lambda (y)
+     (+ x y)))
+  3)
+]]]
+
+This is why the previous expression result is 10. It does so by executing first function with 3 as parameter value for ==x==. This first execution creates an environment in which x is bound to 3. 
+Then it returns a function taking ==y== as parameter and referring to this environment.
+
+The following expressions illustrate the same by defining a function ==y==
+and executing such function. 
+
+[[[
+(define fy
+ ((lambda (x)
+   (lambda (y)
+     (+ x y)))
+  3))
+
+(fy 7)
+>>> 10
+]]]
+
+!!!! About let
+In fact defining local environment is so frequent than Scheme and Lisp languages offer the ==let== special form to define local environment as follow: 
+
+[[[
+(let ((x 3) (+ x x))
+	<=> 
+((lambda (x) (+ x x)) 3)
+]]]
+
+We will implement ==let== later because closures are a more fundamental feature. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+!!! About procedure evaluation
+
+
+In fact 
+
+
+
+
+[[[
+(let ((x 3) (+ x x)) 
+	<=> 
+((lambda (x) (+ x x)) 3)
+]]]
+
+!!! Closure
+
+[[[
+(define makeAccount
+	(lambda (balance)
+		(lambda (amount)
+			(begin 
+				(set! balance (+ balance amount))
+				balance))))
+
+(define ac1 (makeAccount 1000))
+(ac1 -200)
+]]]
