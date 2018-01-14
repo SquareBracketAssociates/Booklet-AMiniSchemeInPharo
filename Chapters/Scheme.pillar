@@ -718,6 +718,7 @@ EnvironmentTest >> testLookupInFails
 
 
 !!! Implement an environment class
+An environment is just one special kind of dictionary that when it does not find the value of a key, looks up in its father dictionary and this recursively.  We define the class ==Environment== as a subclass of ==Dictionary== as follows: 
 
 [[[
 Dictionary subclass: #Environment
@@ -734,8 +735,7 @@ Environment >> outerEnvironment: anEnvironment
 	outerEnvironment := anEnvironment
 ]]]
 
-We redefine the method ==at:== so that we check if the value is defined locally. When this is the case we return it, else when there is an outer environment we recursively 
-try to access the value. When there is no outer environment we simply execute the default behavior.
+We redefine the method ==at:== so that we look up first locally for a value. When this is the case we return it, else when there is an outer environment we recursively try to access the value. When there is no outer environment, we simply execute the default behavior which will lead to raise an error.
 
 [[[
 Environment >> at: aKey
@@ -824,11 +824,13 @@ PhyscheTest >> testProcedureExecution
 	self assert: (ph eval: (ph parse: '(squared 3)')) equals: 9
 ]]]
 
-Again we will implement of function application step by step to understand the different aspects.
+Again we will implement function application step by step to understand the different aspects.
 
 What is important to see if that while executing a procedure body,  we have to have access to the environment, for example, to access primitive definitions. We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
 
-The not really good implementation is then the following. 
+
+!!!! A first function application
+The not really good implementation is then the following:
 
 [[[
 eval: expression
@@ -905,32 +907,106 @@ In fact defining local environment is so frequent than Scheme and Lisp languages
 We will implement ==let== later because closures are a more fundamental feature. 
 
 
+!!! Implementing closure
+The first point is that we should change the ==lambda== special form to refer to the environment in which it is defined. 
 
+To test that ==lambda== effectively creates an environment. We can use this expression:
 
+[[[
+(define fy3 
+  ((lambda (x)
+      (lambda (y)
+       x))
+	  3))
 
+(fy3 7)
+]]]
 
+Here the nested function having y as parameter is just returning the value of x. And during the function execution, the value of x will be looked up in the created environment.
 
+Here is a first test. Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. 
+ 
+[[[
+PhyscheTest >> testSimpleClosureIntrospection
 
-
-
-
-
-
-!!! About procedure evaluation
-
-
-In fact 
-
-
+	| proc |
+	ph eval: (ph parse: '(define fy3 
+  ((lambda (x)
+   (lambda (y)
+      x))
+  3))').
+	proc := ph eval: #fy3.
+	self assert: proc parameters equals: #(y).
+	self assert: (proc environment at: #x) equals: 3.
+]]]
 
 
 [[[
-(let ((x 3) (+ x x)) 
-	<=> 
-((lambda (x) (+ x x)) 3)
+PhyscheTest >> testSimpleClosure
+
+	| res |
+	res := ph eval: (ph parse: '((lambda (x)
+   (lambda (y)
+     (+ x y))
+   3)
+ 7)').
+	self assert: res equals: 10
 ]]]
 
-!!! Closure
+We add the environment instyance variable to the class ==Procedure== and set the environment to the interpreter environment when creating the procedure in during execution of the lambda special form. 
+
+[[[
+Object subclass: #Procedure
+	instanceVariableNames: 'parameters body environment'
+	classVariableNames: ''
+	package: 'Pheme-Interpreters'
+]]]
+
+
+[[[
+	first = #lambda
+		ifTrue: [ ^ Procedure new
+						parameters: expression second;
+						body: expression third; 
+						environment: environment ].
+]]]
+
+Now we should revisit the function evaluation to use the procedure environment instead of the one of the interpreter. 
+
+
+
+
+
+
+!!! Adding set!
+
+
+
+
+
+
+
+Note that the following expression which which sets the value of a parameter also relies on the fact that function application creates an temporary environment.
+
+[[[
+(define ff
+  (lambda (x)
+    (set! x 33)
+    x))
+
+(ff 66)
+]]]
+
+
+
+
+
+
+
+
+
+
+!!! Fun with closures
 
 [[[
 (define makeAccount
