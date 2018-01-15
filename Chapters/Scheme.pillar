@@ -105,16 +105,19 @@ To reuse a function in a program, we can assign a procedure to variable using ==
 ]]]
 
 !!!! Quote
-==quote== is an interesting special form: it does not evaluate its argument but return it. It is useful when manipulating lists. 
+==quote== is an interesting special form: it does not evaluate its argument but instead returns it. It is useful when manipulating lists. 
 
 [[[
 (quote 1)
 >>> 1
 ]]]
 
-The following expression returns then a list which looks like a function application but it just a list.
+For example, the following expressions returns then a list which looks like a function application but it just a list.
 
 [[[
+(quote (add2 17))
+>>> (add2 17)
+
 (quote (quote 1))
 >>> (quote 1)
 ]]]
