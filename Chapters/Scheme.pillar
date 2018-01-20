@@ -1058,6 +1058,9 @@ What is important to see is that the execution environment has as outer environm
 If we pass environment instead the bindings created during the function application will not be taken into account. In our example, x will not be bound to 3 when executing the body.
 
 
+We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and conclude with this first version. 
+
+
 
 !!! Adding set!
 
@@ -1077,15 +1080,6 @@ Note that the following expression which which sets the value of a parameter als
 
 (ff 66)
 ]]]
-
-
-
-
-
-
-
-
-
 
 !!! Fun with closures
 
