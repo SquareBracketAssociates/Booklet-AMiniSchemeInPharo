@@ -854,25 +854,25 @@ The not really good implementation is then the following:
 [[[
 eval: expression
 	...
-		| proc res outerEnv innerProcEnv |
-		"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
-		proc := self eval: first.
-		outerEnv := environment.
-		innerProcEnv := Environment
-			newFromKeys: proc parameters
-			andValues: (expression allButFirst collect: [ :e | self eval: e ]).
-		innerProcEnv outerEnvironment: environment.
-		environment := innerProcEnv.
-		res := self eval: proc body.
-		environment := outerEnv.
-		^ res ] ] ]
+	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+	| proc res oldEnv newEnv |
+	
+	proc := self eval: first.
+	oldEnv := environment.
+	newEnv := Environment
+		newFromKeys: proc parameters
+		andValues: (expression allButFirst collect: [ :e | self eval: e ]).
+	newEnv outerEnvironment: environment.
+	environment := newEnv.
+	res := self eval: proc body.
+	environment := oldEnv.
+	^ res ] ] ]
 ]]]
 
 
-We create a new environment with the parameters and their values, we link this environment to its defining one so that primitive values can be found, we
-install this new environment and evalute the method body and reinstall the original environment and return the result. 
+We create a new environment with the parameters and their values, we link this environment to its defining one so that primitive values can be found, we install this new environment and evalute the method body and reinstall the original environment and return the result.  What we see here is that it would be simpler to implement if ==eval:== would have an explicit environment parameter. 
 
-With such implementation, all our tests should pass but this is not really a nice implementation and more important it does not support lexical closure. 
+With such an implementation, all our current tests should pass but this is not really a nice implementation and more important it does not support lexical closure. 
 
 !!! Studying a closure
 
@@ -964,15 +964,20 @@ PhyscheTest >> testSimpleClosureIntrospection
 PhyscheTest >> testSimpleClosure
 
 	| res |
-	res := ph eval: (ph parse: '((lambda (x)
+	res := ph eval: (ph parse: '(
+ ((lambda (x)
    (lambda (y)
-     (+ x y))
-   3)
+     (+ x y)))
+  3)
  7)').
 	self assert: res equals: 10
 ]]]
 
-We add the environment instance variable to the class ==Procedure== and set the environment to the interpreter environment when creating the procedure in during execution of the lambda special form. 
+What is important to see is that the function ==lambda (y)...== will be executed in an environment where y is bound to 7 and this environment will have as outer environment an environment with x bound to 3 as shown in Figure *@envbinding*
+
++Each function application creates an environment and is evaluated in its definition environment .>file://figures/lambda.pdf|width=60|label=envbinding+
+
+We add the environment instance variable to the class ==Procedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form. 
 
 [[[
 Object subclass: #Procedure
@@ -992,8 +997,65 @@ Object subclass: #Procedure
 
 Now we should revisit the function evaluation to use the procedure environment instead of the one of the interpreter. 
 
+To help us write the behavior for closure, we define the following method on Procedure.
 
+[[[
+Procedure >> setEnvironmentForParameters: values in: outerEnvironment
 
+	environment := PEnvironment newFromKeys: self parameters andValues: values.
+	environment outerEnvironment: outerEnvironment.
+]]]
+
+[[[
+eval: expression
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ (environment at: first) valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
+				ifFalse: [ first = #define
+						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+					first = #lambda
+						ifTrue: [
+							 ^ PProcedure new
+								parameters: expression second;
+								body: expression third; 
+								environment: environment ].
+					first = #if
+						ifTrue: [ ^ (self eval: expression second)
+								ifTrue: [ self eval: expression third ]
+								ifFalse: [ self eval: expression fourth ] ].
+					first = #quote
+						ifTrue: [  ^ expression second ]
+						ifFalse: [ | proc res oldEnv |
+							"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+							proc := self eval: first.
+							proc 
+								setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e ]) 
+								in: proc environment. 
+							oldEnv := environment.
+							environment := proc environment.
+							res := self eval: proc body.
+							environment := oldEnv.
+							^ res ] ] ]
+]]]
+
+What is important to see is that the execution environment has as outer environment the one of the procedure. 
+
+[[[
+	...
+	proc 
+		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e ]) 
+		in: proc environment. 
+	...
+]]]
+
+If we pass environment instead the bindings created during the function application will not be taken into account. In our example, x will not be bound to 3 when executing the body.
 
 
 
