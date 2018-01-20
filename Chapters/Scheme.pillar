@@ -1061,27 +1061,120 @@ If we pass environment instead the bindings created during the function applicat
 We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and conclude with this first version. 
 
 
+!!! Adding set! and begin
 
-!!! Adding set!
-
-
-
+To be able to experiment more with closures, we will add support for changing the value a binding using the ==set!== special form and performing a sequence of instructions using the ==begin== special form.
 
 
-
-
-Note that the following expression which which sets the value of a parameter also relies on the fact that function application creates an temporary environment.
+The following tests specify that the modification should happen in the environment defining the existing binding. In particular when a binding is not right in the current environment but in one of the outer environment, this is the environment that contains the binding that should be modified.
 
 [[[
-(define ff
-  (lambda (x)
-    (set! x 33)
-    x))
-
-(ff 66)
+EnvironmentTest >> testSetAtRightLevel
+	
+	outer at: #dad put: 'donald'.
+	inner at: #son put: 'riri'.
+	self assert: (inner at: #son) = 'riri'.
+	inner lookupAt: #son put: 'fifi'.
+	
+	self assert: (outer at: #dad) = 'donald'.
+	outer lookupAt: #dad put: 'piscou'.
+	self assert: (outer at: #dad) = 'piscou'.
 ]]]
 
+[[[	
+EnvironmentTest >> testSetLookup
+	outer at: #dad put: 'donald'.
+	inner at: #son put: 'riri'.
+	self assert: (inner at: #dad) = 'donald'.
+	inner lookupAt: #dad put: 'picsou'.
+	self assert: (outer at: #dad) = 'picsou'.
+	self assert: (inner at: #dad) = 'picsou'.
+	self deny: (inner keys includes: #dad)
+]]]
+
+[[[
+Environment >> lookupAt: aKey put: aValue
+	"Change the value of the binding whose key is aKey, but looking in the complete ancestor chain."
+	| found |
+	found := self at: aKey ifAbsent: nil.
+	found 
+		ifNil: [ outerEnvironment  
+						ifNotNil: [ outerEnvironment lookupAt: aKey put: aValue] 
+						ifNil: [ self at: aKey put: aValue ]]
+		ifNotNil: [ self at: aKey put: aValue ]
+]]]
+
+
+Now we write a simple test checking that we can change the value of a binding. We will add more complex tests once we get ==begin== implemented.
+
+[[[
+PhyscheTest >> testEvalSimpleSet
+	self assert: (ph eval: (ph parse: '(define x2 21')) equals: #undefined.
+	self assert: (ph eval: (ph parse: '(set x2 22)')) equals: #undefined.
+	self assert: (ph eval: (ph parse: 'x2')) equals: 22.
+]]]
+
+
+Now we are ready to implement ==set!==. 
+
+[[[
+	first = #set
+		ifTrue: [ environment lookupAt: expression second put: (self eval: expression third).
+					^ #undefined ].
+]]]
+
+Our tests should pass.
+
+!!! Implementing begin
+==begin== just evaluates one after the other the expressions in the list and return the value of the last one.
+
+The following test are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
+[[[
+testEvalBegin
+	self assert: (ph eval: (ph parse: '(begin 1 2 3)')) equals: 3
+]]]
+
+[[[
+PhyscheTest >> testEvalBeginSet
+	self assert: (ph eval: (ph parse: '(begin (define x 1) (set x 2) x)')) equals: 2
+]]]
+
+
+Now the implementation of ==begin== is the following one. 
+
+[[[
+	...
+	first = #begin
+		ifTrue: [ 
+				| res | 
+				(expression allButFirst do: [:each | res := self eval: each ]).
+				^ res ].
+]]]
+
+
+Now we can write a more complex test showing that we can change the binding of a variable created over function application.
+
+[[[
+PhyscheTest >> testEvalSetAtCorrectLevel
+	| proc |
+	ph eval: (ph parse: '
+	(define fy3 
+		((lambda (x)
+			(lambda (y)
+					(begin
+						(set x (+ x 2))
+						(+ x y))))
+				3))
+	').
+	proc := ph eval: #fy3.
+	self assert: (ph eval: (ph parse: '(fy3 5)')) equals: 10
+]]]
+
+
+
 !!! Fun with closures
+
+Finally we can develop now little object with an internal state. 
 
 [[[
 (define makeAccount
@@ -1093,4 +1186,13 @@ Note that the following expression which which sets the value of a parameter als
 
 (define ac1 (makeAccount 1000))
 (ac1 -200)
+>>> 800
+(define ac2 (makeAccount 2000))
+(ac2 300)
+>>> 2300
 ]]]
+
+!!! Conclusion
+
+This ends our naive and not really object-oriented implementation of a subset of Scheme.
+In the following chapter we will fully revisit the implementation to reduce the complexity of the ==eval:== method.
