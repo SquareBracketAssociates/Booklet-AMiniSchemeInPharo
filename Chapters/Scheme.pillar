@@ -972,7 +972,7 @@ PhyscheTest >> testSimpleClosure
 	self assert: res equals: 10
 ]]]
 
-We add the environment instyance variable to the class ==Procedure== and set the environment to the interpreter environment when creating the procedure in during execution of the lambda special form. 
+We add the environment instance variable to the class ==Procedure== and set the environment to the interpreter environment when creating the procedure in during execution of the lambda special form. 
 
 [[[
 Object subclass: #Procedure
