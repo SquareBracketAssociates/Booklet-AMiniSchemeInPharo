@@ -104,6 +104,50 @@ To reuse a function in a program, we can assign a procedure to variable using ==
 >>> 35
 ]]]
 
+
+!!!! Closures
+Now a closure is more than a function. A closure refers to its definition environment. 
+The following example illustrates it. It defines a function that returns a function. This function (having ==y== as a parameter) will add x to y and x is bound to 3 due to the application of the first function. 
+The function y is a closure that has an environment in which the variable x is bound to 3.
+
+[[[
+(define fy3 
+	((lambda (x)
+		(lambda (y)
+			(+ x y)))
+		3))
+]]]
+
+[[[
+(fy3 4)
+>>> 7
+]]]
+
+Similarly the following function shows that we can modify this definition environment during 
+function execution. 
+
+[[[
+(define sy3 
+		((lambda (x)
+			(lambda (y)
+				(begin
+					(set x (+ x 2))
+					(+ x y))))
+			3))
+]]]
+
+and now each time the function ==sy3== is executed its definition environment is modified and the 
+value of ==x== is incremented. 
+
+[[[
+(sy3 5)
+>>> 10
+(sy3 5)
+>>> 12
+(sy3 5)
+>>> 14
+]]]
+
 !!!! Quote
 ==quote== is an interesting special form: it does not evaluate its argument but instead returns it. It is useful when manipulating lists. 
 
