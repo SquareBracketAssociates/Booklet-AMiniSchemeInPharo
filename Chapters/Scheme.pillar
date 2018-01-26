@@ -436,26 +436,31 @@ Quote is an interesting special form. It is the one that does not evaluate its a
 
 [[[
 PhsycheTest >> testEvalQuote
-	self assert: (ph eval: (ph parse: '(quote (* x x))')) equals: #(#* #x #x).
-	self assert: (ph eval: (ph parse: '(quote (quote (* x x)))')) equals: #(quote #(#* #x #x))
+	self 
+		assert: (ph parseAndEval: '(quote (* x x))') 
+		equals: #(#* #x #x).
+	self 
+		assert: (ph parseAndEval: '(quote (quote (* x x)))') 
+		equals: #(quote #(#* #x #x))
 ]]]
 
+
+
 [[[
-Phsyche >> eval: expression
+Phsyche >> eval: expression in: anEnvironment
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
-		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+		ifTrue: [ ^ anEnvironment at: expression ].	"returns the variable value"
 	expression isArray
 		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
 		ifTrue: [ | first |
-			first := expression first.
+			first := expression first. 
 			first = #define
-				ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
+				ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ]
 			first = #quote
-				ifTrue: [ ^ expression second ] ]
+				ifTrue: [ ^ expression second ]
 ]]]
-
 
 
 !!! Setting up the primitives
