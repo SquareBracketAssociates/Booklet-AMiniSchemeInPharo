@@ -161,7 +161,8 @@ For example, the following expressions returns then a list which looks like a fu
 [[[
 (quote (add2 17))
 >>> (add2 17)
-
+]]]
+[[[
 (quote (quote 1))
 >>> (quote 1)
 ]]]
@@ -218,7 +219,7 @@ We will start with a first version that does not include closure and function de
 
 
 
-!! A simple parser for Physche
+!! A simple parser for Phsyche
 
 We will start to implement a extremely simple parser. Then we will define an interpreter for a limited version of the language.
 
@@ -321,31 +322,47 @@ Let us start to specify the expected behavior of the language evaluation.
 
 [[[
 PhsycheTest >> testEvalEmptyList
-	self assert: (ph eval: (ph parse: '()')) equals: #()
+	self assert: (ph parseAndEval: '()') equals: #()
 ]]]
 
 
 [[[
 PhsycheTest >> testEvalBoolean
-	self assert: (ph eval: (ph parse: 'true')) equals: true.
-	self assert: (ph eval: (ph parse: 'false')) equals: false.
+	self assert: (ph parseAndEval: 'true') equals: true.
+	self assert: (ph parseAndEval: 'false') equals: false.
 ]]]
 
 [[[
 PhsycheTest >> testEvalNumber
-	self assert: (ph eval: (ph parse: '12')) equals: 12.
-	self assert: (ph eval: (ph parse: '3.14')) equals: 3.14.
+	self assert: (ph parseAndEval: '12') equals: 12.
+	self assert: (ph parseAndEval: '3.14') equals: 3.14.
 ]]]
 
 
-Now we can add the following method to Phsyche
+Now we can add the following methods to Phsyche
+
+[[[
+Phsyche >> parseAndEval: anExpression
+
+	^ self eval: (self parse: anExpression)
+]]]
+
+We define now the ==eval:== method. It is a short cut to the main ==eval:in:== method.
 
 [[[
 Phsyche >> eval: expression
+	^ self eval: expression in: nil
+]]]
+
+The ==eval:in:== method is central to the interpreter.
+For now, the ==eval:in:== just returns its argument. Quite limited and trivial so far.
+
+[[[
+Phsyche >> eval: expression in: anEnvironment
 	^ expression 
 ]]]
 
-Quite limited and trivial so far. 
+
 
 
 !!! Defining a variable
@@ -355,14 +372,14 @@ We will start with support the definition of variables.
 
 Here is a test showing the behavior we expect. 
 [[[
-PhsycheTest >> testEvalExpression
-	(ph eval: (ph parse: '(define pi 3.14)')).
+PhsycheTest >> testDefineExpression
+	ph parseAndEval: '(define pi 3.14)'.
 	self 
-		assert: (ph eval: (ph parse: 'pi'))
+		assert: (ph  parseAndEval: 'pi')
 		equals:  3.14.
 ]]]
 
-First we should add a dictionary that will hold the defined variables and their values. 
+First we should add a dictionary that will hold the defined variables and their values.
 
 [[[
 Phsyche >> initialize
@@ -370,29 +387,47 @@ Phsyche >> initialize
 	environment := Dictionary new
 ]]]
 
+We redefine the ==eval:== method as follows: 
+
 [[[
 Phsyche >> eval: expression
+	^ self eval: expression in: environment
+]]]	
+
+Now we define a better ==eval:in:== method. If the expression is a symbol, we return the value of the expression in the enviroment. Note that we do not refer to the instance variable ==environment== but the parameter ==anEnvironment== because in the future we will show that we may want to look method in different environment that the one of the interpreter. 
+
+[[[
+Phsyche >> eval: expression in: anEnvironment
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
-		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
+		ifTrue: [ ^ anEnvironment at: expression ].	"returns the variable value"
 	expression isArray
-		ifFalse: [ "returns literals boolean, string, number"
-            ^ expression ]
-		ifTrue: [ | first |
-			first := expression first.
-			first = #define
-				ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ] ]
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ 
+			expression first = #define
+				ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
 ]]]
+
+Then we check if the expression is a variable definition we define it. What you should see is that ==define== is a special form since it does not evaluate its first parameter only the second one. 
+This is what the method ==evalDefineSpecialForm:in:== is doing.
+[[[
+Phsyche >> evalDefineSpecialForm: expression in: anEnvironment
+	anEnvironment 
+		at: expression second 
+		put: (self eval: expression third in: anEnvironment).
+	^ #undefined
+]]]
+
 
 The following test shows that the a variable points to a value. 
 
 [[[
 PhsycheTest >> testEvalExpression2
-	ph eval: (ph parse: '(define pi 3.14)').
-	ph eval: (ph parse: '(define pi2 pi)').
-	ph eval: (ph parse: '(define pi 6.28)').
-	self assert: (ph eval: (ph parse: 'pi2')) equals: 3.14
+	ph parseAndEval: '(define pi 3.14)'.
+	ph parseAndEval: '(define pi2 pi)'.
+	ph parseAndEval: '(define pi 6.28)'.
+	self assert: (ph parseAndEval: 'pi2') equals: 3.14
 ]]]
 
 !!! Introducing quote
