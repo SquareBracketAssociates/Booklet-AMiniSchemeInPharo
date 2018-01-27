@@ -729,8 +729,6 @@ Now our implementation is really limited in the sense that we cannot add new fun
 Now we will add user function and function application to Phsyche. It is a first step towards closures.
 We go step by step to describe the different aspects. 
 
-
-
 !!! Function
 Let us start with a first function definition.
 
@@ -748,7 +746,7 @@ Now we can execute the function:
 ]]]
 
 Let us analyse the definition and application of the function ==area==.
-What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During its execution it will get the value of the argument.
+What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During its execution it gets the value of the argument.
 
 Let us check that the argument value takes precedence over variables defined in outer scope.
 
@@ -768,10 +766,10 @@ Now the application.
 
 +Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
 
-It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found.  Therefore we will define an environment. 
+It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found (Figure *@areaEnvi*). Therefore we will define an environment. 
 
 !!! Defining an environment class
-Now we should define an environment. An environment is just a dictionary that when a binding is not found locally will continue the binding lookup in another environment called its parent or an outer scope. 
+An environment is just a dictionary that when a binding is not found locally continues the binding lookup in another environment called its parent or an outer scope (See Figure *@twoEnvironment*)
 
 
 +Examples of environment.>file://figures/twoEnvironments.pdf|width=60|label=twoEnvironment+
@@ -779,7 +777,7 @@ Now we should define an environment. An environment is just a dictionary that wh
 Let us define some tests...
 
 [[[
-TestCase subclass: #EnvironmentTest
+TestCase subclass: #PEnvironmentTest
 	instanceVariableNames: 'outer inner'
 	classVariableNames: ''
 	package: 'Physche'
@@ -788,16 +786,16 @@ TestCase subclass: #EnvironmentTest
 Our setup makes sure that the inner environment is pointing to another context.
 
 [[[
-EnvironmentTest >> setUp
-	outer := Environment new.
-	inner := Environment new.
+PEnvironmentTest >> setUp
+	outer := PEnvironment new.
+	inner := PEnvironment new.
 	inner outerEnvironment: outer
 ]]]
 
 The first test is to check that we can access the values set in the each level. 
 
 [[[
-EnvironmentTest >> testLookupAtRightLevel
+PEnvironmentTest >> testLookupAtRightLevel
 	outer at: #dad put: 'donald'.
 	self assert: (outer at: #dad) equals: 'donald'.
 	inner at: #son put: 'riri'.
@@ -807,7 +805,7 @@ EnvironmentTest >> testLookupAtRightLevel
 The second test is to check that we can reach the outer value from the inner one.
 
 [[[
-EnvironmentTest >> testLookingOuterFromInner
+PEnvironmentTest >> testLookingOuterFromInner
 	outer at: #dad put: 'donald'.
 	inner at: #son put: 'riri'.
 	self assert: (inner at: #dad) equals: 'donald'
@@ -816,7 +814,7 @@ EnvironmentTest >> testLookingOuterFromInner
 The final test checks that unknown keys are not found.
 
 [[[
-EnvironmentTest >> testLookupInFails
+PEnvironmentTest >> testLookupInFails
 	outer at: #dad put: 'donald'.
 	inner at: #son put: 'riri'.
 	self should: [ outer at: #nodad ] raise: KeyNotFound.
@@ -824,9 +822,12 @@ EnvironmentTest >> testLookupInFails
 	self should: [ inner at: #nodad ] raise: KeyNotFound
 ]]]
 
+We will improve the environment implementation to cover the definition of new binding but we will do that when we will add functionality
+to change the value of binding (i.e., implementing ==set== in Phsyche).
+
 
 !!! Implement an environment class
-An environment is just one special kind of dictionary that when it does not find the value of a key, looks up in its father dictionary and this recursively.  We define the class ==Environment== as a subclass of ==Dictionary== as follows: 
+An environment is just one special kind of dictionary that when it does not find the value of a key, looks up in its father dictionary and this recursively.  We define the class ==PEnvironment== as a subclass of ==Dictionary== as follows: 
 
 [[[
 Dictionary subclass: #Environment
@@ -834,7 +835,6 @@ Dictionary subclass: #Environment
 	classVariableNames: ''
 	package: 'Physche'
 ]]]
-
 
 We need an accessor to set the outer context.
 
@@ -856,80 +856,84 @@ Environment >> at: aKey
 		ifNotNil: [ :v | v ]
 ]]]
 
+Now we are ready to define what is a procedure (or function).  
 
 !!! Procedure definition
 
-We need a way to represent a function. Let us start to write a test. 
+We need a way to represent a function. A function has a list of parameter and a body.
+Let us start to write a test. 
 
 [[[
 PhyscheTest >> testProcedureDefinition
 	| proc |
-	ph eval: (ph parse: '(define squared (lambda (x) (* x x)))').
-	proc := ph eval: (ph parse: #squared).
+	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
+	proc := ph parseAndEval: #squared.
 	self assert: proc parameters equals: #(#x).
 	self assert: proc body equals: #(#* #x #x)
 ]]]
 
+We should define the class ==PProcedure==. It is for now straightforward. 
 
 [[[
-Physche >> eval: expression
-	expression = #()
-		ifTrue: [ ^ expression ].
-	expression isSymbol
-		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
-	expression isArray
-		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
-		ifTrue: [ | first |
-			first := expression first.
-			(primitives includes: first)
-				ifTrue: [ ^ (environment at: first)
-						valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
-				ifFalse: [ first = #define
-						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
-					first = #lambda
-						ifTrue: [ ^ Procedure new
-								parameters: expression second;
-								body: expression third ].
-					first = #if
-						ifTrue: [ ^ (self eval: expression second)
-								ifTrue: [ self eval: expression third ]
-								ifFalse: [ self eval: expression fourth ] ].
-					first = #quote
-						ifTrue: [ ^ expression second ] ] ]
-]]]
-
-Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. Now we should define the class ==Procedure==. It is for now straightforward. 
-
-[[[
-Object subclass: #Procedure
+Object subclass: #PProcedure
 	instanceVariableNames: 'parameters body'
 	classVariableNames: ''
 	package: 'Phsyche'
 ]]]
 
-We should also define the accessors for its instance variables. 
-Now Physche supports the ''definition'' of procedures but not their application. 
+Define the accessors for its instance variables. 
+Now we will extend the interpreter to create procedure. When an expression starts with a lambda keyword, we should return a procedure. 
+
+
+[[[
+Physche >> eval: expression in: anEnvironment
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ anEnvironment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ self evalPrimitive: expression in: anEnvironment ]
+				ifFalse: [ first = #define
+						ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
+					first = #lambda
+						ifTrue: [ ^ self evalLambdaSpecialForm: expression in: anEnvironment ].
+					first = #if
+						ifTrue: [ ^ self evalIfSpecialForm: expression in: anEnvironment].
+					first = #quote
+						ifTrue: [ ^ expression second ] ] ]
+]]]
+
+[[[
+Physche >> evalLambdaSpecialForm: expression in: anEnvironment
+	^ PProcedure new
+		parameters: expression second;
+		body: expression third
+]]]
+
+Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. 
+
+
+Now Physche supports the ''definition'' of procedures but not their application. Let us look at that now.
 
 !!! Function application
 
-As we saw language following Lisp like syntax follow the pattern ==(proc args)== to mean that the function ==proc== is applied to the arguments ==args==.
+As we saw languages following Lisp like syntax follow the pattern ==(proc args)== to mean that the function ==proc== is applied to the arguments ==args==. Such arguments are evaluated prior to be pass to the function.
 
 Let us write tests to control such a behavior. 
 
 [[[
 PhyscheTest >> testLambdaProcedureExecution
-	self assert: (ph eval: (ph parse: '((lambda (x) (* x x)) 3)')) equal: 9
-]]]
-
-[[[
-PhyscheTest >> testLambdaProcedureExecution
-	self assert: (ph eval: (ph parse: '((lambda (x) (* x x)) 3)')) equal: 9
+	self assert: (ph parseAndEval: '((lambda (x) (* x x)) 3)') equals: 9.
 ]]]
 
 [[[
 PhyscheTest >> testProcedureExecution
-	ph eval: (ph parse: '(define squared (lambda (x) (* x x)))').
-	self assert: (ph eval: (ph parse: '(squared 3)')) equals: 9
+	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
+	self assert: (ph parseAndEval: '(squared 3)') equals: 9
 ]]]
 
 Again we will implement function application step by step to understand the different aspects.
@@ -941,27 +945,80 @@ What is important to see if that while executing a procedure body,  we have to h
 The not really good implementation is then the following:
 
 [[[
-eval: expression
-	...
-	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
-	| proc res oldEnv newEnv |
-	
-	proc := self eval: first.
-	oldEnv := environment.
-	newEnv := Environment
-		newFromKeys: proc parameters
-		andValues: (expression allButFirst collect: [ :e | self eval: e ]).
-	newEnv outerEnvironment: environment.
-	environment := newEnv.
-	res := self eval: proc body.
-	environment := oldEnv.
-	^ res ] ] ]
+Phsyche >> eval: expression in: anEnvironment
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ anEnvironment at: expression ].	"returns the variable value"
+	expression isArray
+		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
+		ifTrue: [ | first |
+			first := expression first.
+			(primitives includes: first)
+				ifTrue: [ ^ self evalPrimitive: expression in: anEnvironment ]
+				ifFalse: [ 
+						first = #define
+							ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
+						first = #lambda
+							ifTrue: [ ^ self evalLambdaSpecialForm: expression in: anEnvironment ].
+						first = #if
+							ifTrue: [ ^ self evalIfSpecialForm: expression in: anEnvironment].
+						first = #quote
+							ifTrue: [ ^ expression second ]
+							ifFalse: [
+								^ self evalApplicativeOrder: expression in: anEnvironment ] ] ]
 ]]]
 
 
-We create a new environment with the parameters and their values, we link this environment to its defining one so that primitive values can be found, we install this new environment and evalute the method body and reinstall the original environment and return the result.  What we see here is that it would be simpler to implement if ==eval:== would have an explicit environment parameter. 
+The following method is responsible for the function application: it evaluates its first element, which will return a procedure. 
+It creates an new environment with the parameters and the values of the arguments as values 
+and execute the body of the procedure within this environment. 
 
-With such an implementation, all our current tests should pass but this is not really a nice implementation and more important it does not support lexical closure. 
+[[[
+Phsyche >> evalApplicativeOrder: expression in: anEnvironment
+	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+	
+	| proc newEnv |
+	proc := self eval: expression first in: anEnvironment.
+	newEnv := proc
+		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e in: anEnvironment ])
+		in: anEnvironment.
+	^ self eval: proc body in: newEnv
+]]]
+
+Note that for function application, the application environment (==newEnv==) has as parent the global interpreter environment. This will not be the case for closures as we will see later. 
+
+The method ==setEnvironmentForParameters:in:== is a simple helper function that creates a new environment based on values and the procedure parameter
+and an outer environment. 
+
+[[[
+PProcedure >> setEnvironmentForParameters: values in: outerEnvironment
+	"Create a new environment inheriting from the procedure one, for the current application."
+	| applicationEnvironment |
+	applicationEnvironment := PEnvironment newFromKeys: self parameters andValues: values.
+	applicationEnvironment outerEnvironment: outerEnvironment.
+	^ applicationEnvironment
+]]]
+
+
+The class method ==newFromKeys:andValues:== only exist in Pharo 70. Here is its definition.
+
+[[[
+Dictionary class >> newFromKeys: keys andValues: values
+	"Create a dictionary from the keys and values arguments which should have the same length."	
+	"(Dictionary newFromKeys: #(#x #y) andValues: #(3 6)) >>> (Dictionary new at: #x put: 3; at: #y put: 6 ;yourself)"
+	
+	| dict |
+	dict := self new.
+	keys with: values do: [ :k :v | dict at: k put: v ].
+	^ dict
+]]]
+
+
+With such an implementation, all our current tests should pass.
+Now we are ready to implement closures.
+
+
 
 !! Adding closures 
 
