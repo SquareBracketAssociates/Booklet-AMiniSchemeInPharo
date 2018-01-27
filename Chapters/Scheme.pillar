@@ -1129,7 +1129,7 @@ PhyscheTest >> testSimpleClosure
 
 What is important to see is that the function ==lambda (y)...== will be executed in an environment where ==y== is bound to 7 and this environment will have as outer environment an environment with ==x== bound to 3 as shown in Figure *@envbinding*
 
-+Each function application creates an environment and is evaluated in its definition environment .>file://figures/lambda.pdf|width=60|label=envbinding+
++Each function application creates an environment and is evaluated in its definition environment.>file://figures/lambda.pdf|width=60|label=envbinding+
 
 We add the environment instance variable to the class ==PProcedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form. 
 
