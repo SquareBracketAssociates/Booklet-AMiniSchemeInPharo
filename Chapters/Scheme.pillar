@@ -725,7 +725,7 @@ Now all our lovely tests are passing.
 Now our implementation is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter.
 
 
-!! Adding function as a step towards closures
+!! Adding functions as a step towards closures
 Now we will add user function and function application to Phsyche. It is a first step towards closures.
 We go step by step to describe the different aspects. 
 
@@ -830,7 +830,7 @@ to change the value of binding (i.e., implementing ==set== in Phsyche).
 An environment is just one special kind of dictionary that when it does not find the value of a key, looks up in its father dictionary and this recursively.  We define the class ==PEnvironment== as a subclass of ==Dictionary== as follows: 
 
 [[[
-Dictionary subclass: #Environment
+Dictionary subclass: #PEnvironment
 	instanceVariableNames: 'outerEnvironment'
 	classVariableNames: ''
 	package: 'Physche'
@@ -839,14 +839,14 @@ Dictionary subclass: #Environment
 We need an accessor to set the outer context.
 
 [[[
-Environment >> outerEnvironment: anEnvironment
+PEnvironment >> outerEnvironment: anEnvironment
 	outerEnvironment := anEnvironment
 ]]]
 
 We redefine the method ==at:== so that we look up first locally for a value. When this is the case we return it, else when there is an outer environment we recursively try to access the value. When there is no outer environment, we simply execute the default behavior which will lead to raise an error.
 
 [[[
-Environment >> at: aKey
+PEnvironment >> at: aKey
 	| value |
 	value := self at: aKey ifAbsent: [ nil ].
 	^ value
@@ -1020,13 +1020,16 @@ Now we are ready to implement closures.
 
 
 
-!! Adding closures 
 
-Now we will add closures to Phsyche. A closure is a function capturing the environment in which is defined. We will start by implementing functions also called procedures in Scheme. Then we will focus on the closure semantics.
+
+
+!! Adding closures to Physche
+
+Now we add closures to Phsyche. A closure is a function capturing the environment in which is defined. We start studying some examples and then we will implement on the closure semantics.
 
 !!! Studying a closure
 
-A closure is a function which contains a reference to the environment at its definition time. Since evaluating a lambda is like defining a temporary environment in which the parameters are bound, we can use this fact to create an environment local to a function. Let us have a look at a simple example:
+A closure is a function which contains a reference to the environment at its definition time. Since evaluating a lambda defines a temporary environment in which the parameters are bound, we can use this fact to create an environment local to a function. Let us have a look at a simple example:
 
 [[[
 	(
@@ -1048,10 +1051,10 @@ The following subexpression returns a function adding 3 to its parameter ==y==.
 ]]]
 
 This is why the previous expression result is 10. It does so by executing first function with 3 as parameter value for ==x==. This first execution creates an environment in which x is bound to 3. 
-Then it returns a function taking ==y== as parameter and referring to this environment.
+Then it returns a function taking ==y== as parameter and referring to this environment. This is why when the ==(+x y)== body is executed ==x== is bound to 3.
 
 The following expressions illustrate the same by defining a function ==y==
-and executing such function. 
+and executing such a function. 
 
 [[[
 (define fy
@@ -1059,13 +1062,16 @@ and executing such function.
    (lambda (y)
      (+ x y)))
   3))
+]]]
 
+[[[
 (fy 7)
 >>> 10
 ]]]
 
+
 !!!! About let
-In fact defining local environment is so frequent than Scheme and Lisp languages offer the ==let== special form to define local environment as follow: 
+In fact defining local environment is so frequent that Scheme and Lisp languages offer the ==let== special form to define local environment as follow: 
 
 [[[
 (let ((x 3) (+ x x))
@@ -1073,7 +1079,7 @@ In fact defining local environment is so frequent than Scheme and Lisp languages
 ((lambda (x) (+ x x)) 3)
 ]]]
 
-We will implement ==let== later because closures are a more fundamental feature. 
+You can add ==let== to Phsyche as an exercise. 
 
 
 !!! Implementing closure
@@ -1091,20 +1097,18 @@ To test that ==lambda== effectively creates an environment. We can use this expr
 (fy3 7)
 ]]]
 
-Here the nested function having y as parameter is just returning the value of x. And during the function execution, the value of x will be looked up in the created environment.
-
-Here is a first test. Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. 
+Here the nested function having y as parameter is just returning the value of x. And during the function execution, the value of x will be looked up in the created environment. Here is a first test. Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. 
  
 [[[
 PhyscheTest >> testSimpleClosureIntrospection
 
 	| proc |
-	ph eval: (ph parse: '(define fy3 
+	ph eval: (ph parseAndEval: '(define fy3 
   ((lambda (x)
    (lambda (y)
       x))
   3))').
-	proc := ph eval: #fy3.
+	proc := ph parseAndEval: '#fy3'.
 	self assert: proc parameters equals: #(y).
 	self assert: (proc environment at: #x) equals: 3.
 ]]]
@@ -1123,11 +1127,11 @@ PhyscheTest >> testSimpleClosure
 	self assert: res equals: 10
 ]]]
 
-What is important to see is that the function ==lambda (y)...== will be executed in an environment where y is bound to 7 and this environment will have as outer environment an environment with x bound to 3 as shown in Figure *@envbinding*
+What is important to see is that the function ==lambda (y)...== will be executed in an environment where ==y== is bound to 7 and this environment will have as outer environment an environment with ==x== bound to 3 as shown in Figure *@envbinding*
 
 +Each function application creates an environment and is evaluated in its definition environment .>file://figures/lambda.pdf|width=60|label=envbinding+
 
-We add the environment instance variable to the class ==Procedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form. 
+We add the environment instance variable to the class ==PProcedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form. 
 
 [[[
 Object subclass: #Procedure
@@ -1138,88 +1142,50 @@ Object subclass: #Procedure
 
 
 [[[
-	first = #lambda
-		ifTrue: [ ^ Procedure new
-						parameters: expression second;
-						body: expression third; 
-						environment: environment ].
+Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
+	^ PProcedure new
+		parameters: expression second;
+		body: expression third;
+		environment: anEnvironment
 ]]]
 
-Now we should revisit the function evaluation to use the procedure environment instead of the one of the interpreter. 
-
-To help us write the behavior for closure, we define the following method on Procedure.
+Now we should revisit function evaluation to use the procedure environment instead of the one of the interpreter. 
 
 [[[
-Procedure >> setEnvironmentForParameters: values in: outerEnvironment
-
-	environment := PEnvironment newFromKeys: self parameters andValues: values.
-	environment outerEnvironment: outerEnvironment.
+Phsyche >> evalApplicativeOrder: expression in: anEnvironment
+	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+	| proc newEnv |
+	proc := self eval: expression first in: anEnvironment.
+	newEnv := proc
+		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e in: anEnvironment ])
+		in: proc environment.
+	^ self eval: proc body in: newEnv
 ]]]
+
+Here we create the ==newEnv== using now the procedure environment as expressed here ==proc environment==.
+What is important to see is that with closure application is that the execution environment has as outer environment the one of the procedure. 
 
 [[[
-eval: expression
-	expression = #()
-		ifTrue: [ ^ expression ].
-	expression isSymbol
-		ifTrue: [ ^ environment at: expression ].	"returns the variable value"
-	expression isArray
-		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
-		ifTrue: [ | first |
-			first := expression first.
-			(primitives includes: first)
-				ifTrue: [ ^ (environment at: first) valueWithPossibleArgs: (expression allButFirst collect: [ :e | self eval: e ]) ]
-				ifFalse: [ first = #define
-						ifTrue: [ ^ environment at: expression second put: (self eval: expression third) ].
-					first = #lambda
-						ifTrue: [
-							 ^ PProcedure new
-								parameters: expression second;
-								body: expression third; 
-								environment: environment ].
-					first = #if
-						ifTrue: [ ^ (self eval: expression second)
-								ifTrue: [ self eval: expression third ]
-								ifFalse: [ self eval: expression fourth ] ].
-					first = #quote
-						ifTrue: [  ^ expression second ]
-						ifFalse: [ | proc res oldEnv |
-							"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
-							proc := self eval: first.
-							proc 
-								setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e ]) 
-								in: proc environment. 
-							oldEnv := environment.
-							environment := proc environment.
-							res := self eval: proc body.
-							environment := oldEnv.
-							^ res ] ] ]
+Phsyche >> evalApplicativeOrder: expression in: anEnvironment
+	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+	| proc newEnv |
+	proc := self eval: expression first in: anEnvironment.
+	newEnv := proc
+		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e in: anEnvironment ])
+		in: proc environment.
+	^ self eval: proc body in: newEnv
 ]]]
 
-What is important to see is that the execution environment has as outer environment the one of the procedure. 
-
-[[[
-	...
-	proc 
-		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e ]) 
-		in: proc environment. 
-	...
-]]]
-
-If we pass environment instead the bindings created during the function application will not be taken into account. In our example, x will not be bound to 3 when executing the body.
-
-
-We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and conclude with this first version. 
-
+We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and 
+conclude with this first version of Phsyche.
 
 !!! Adding set! and begin
-
-To be able to experiment more with closures, we will add support for changing the value a binding using the ==set!== special form and performing a sequence of instructions using the ==begin== special form.
-
+To be able to experiment more with closures, we add support for changing the value a binding using the ==set!== special form and performing a sequence of instructions using the ==begin== special form.
 
 The following tests specify that the modification should happen in the environment defining the existing binding. In particular when a binding is not right in the current environment but in one of the outer environment, this is the environment that contains the binding that should be modified.
 
 [[[
-EnvironmentTest >> testSetAtRightLevel
+PEnvironmentTest >> testSetAtRightLevel
 	
 	outer at: #dad put: 'donald'.
 	inner at: #son put: 'riri'.
@@ -1232,7 +1198,7 @@ EnvironmentTest >> testSetAtRightLevel
 ]]]
 
 [[[	
-EnvironmentTest >> testSetLookup
+PEnvironmentTest >> testSetLookup
 	outer at: #dad put: 'donald'.
 	inner at: #son put: 'riri'.
 	self assert: (inner at: #dad) = 'donald'.
@@ -1242,15 +1208,21 @@ EnvironmentTest >> testSetLookup
 	self deny: (inner keys includes: #dad)
 ]]]
 
+
+We implement a new method called ==lookupAt:put:== that 
+
+
+
 [[[
-Environment >> lookupAt: aKey put: aValue
-	"Change the value of the binding whose key is aKey, but looking in the complete ancestor chain."
+PEnvironment >> lookupAt: aKey put: aValue
+	"Change the value of the binding whose key is aKey, but looking in the complete ancestor chain.
+	If the binding does not exist, it raises an error to indicate that we should define it first."
 	| found |
 	found := self at: aKey ifAbsent: nil.
 	found 
 		ifNil: [ outerEnvironment  
-						ifNotNil: [ outerEnvironment lookupAt: aKey put: aValue] 
-						ifNil: [ self at: aKey put: aValue ]]
+					ifNotNil: [ outerEnvironment lookupAt: aKey put: aValue] 
+					ifNil: [ KeyNotFound signal: aKey , ' not found in the environment' ]]
 		ifNotNil: [ self at: aKey put: aValue ]
 ]]]
 
@@ -1259,55 +1231,80 @@ Now we write a simple test checking that we can change the value of a binding. W
 
 [[[
 PhyscheTest >> testEvalSimpleSet
-	self assert: (ph eval: (ph parse: '(define x2 21')) equals: #undefined.
-	self assert: (ph eval: (ph parse: '(set x2 22)')) equals: #undefined.
-	self assert: (ph eval: (ph parse: 'x2')) equals: 22.
+	self assert: (ph parseAndEval: '(define x2 21') equals: #undefined.
+	self assert: (ph parseAndEval: '(set x2 22)') equals: #undefined.
+	self assert: (ph parseAndEval: 'x2') equals: 22.
 ]]]
 
 
 Now we are ready to implement ==set!==. 
 
 [[[
-	first = #set
-		ifTrue: [ environment lookupAt: expression second put: (self eval: expression third).
-					^ #undefined ].
+Phsyche >> eval: expression in: anEnvironment
+	...
+		first = #define
+			ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
+		first = #set
+			ifTrue: [ ^ self evalSetSpecialForm: expression in: anEnvironment ].
+		first = #lambda
+			ifTrue: [ ^ self evalLambdaSpecialForm: expression in: anEnvironment ].
+	...
+]]]
+
+
+[[[
+Phsyche >> evalSetSpecialForm: expression in: anEnvironment
+	anEnvironment lookupAt: expression second put: (self eval: expression third in: anEnvironment).
+	^ #undefined
 ]]]
 
 Our tests should pass.
 
 !!! Implementing begin
-==begin== just evaluates one after the other the expressions in the list and return the value of the last one.
+The special form ==begin== just evaluates one after the other the expressions in the list and return the value of the last one. The following tests are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
 
-The following test are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
 [[[
-testEvalBegin
-	self assert: (ph eval: (ph parse: '(begin 1 2 3)')) equals: 3
+PhyscheTest >> testEvalBegin
+	self assert: (ph parseAndEval: '(begin 1 2 3)') equals: 3
 ]]]
 
 [[[
 PhyscheTest >> testEvalBeginSet
-	self assert: (ph eval: (ph parse: '(begin (define x 1) (set x 2) x)')) equals: 2
+	self assert: (ph parseAndEval:  '(begin (define x 1) (set x 2) x)') equals: 2
 ]]]
 
 
 Now the implementation of ==begin== is the following one. 
 
 [[[
+Phsyche >> eval: expression in: anEnvironment
 	...
-	first = #begin
-		ifTrue: [ 
-				| res | 
-				(expression allButFirst do: [:each | res := self eval: each ]).
-				^ res ].
+		first = #define
+			ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
+		first = #set
+			ifTrue: [ ^ self evalSetSpecialForm: expression in: anEnvironment ].
+		first = #lambda
+			ifTrue: [ ^ self evalLambdaSpecialForm: expression in: anEnvironment ].
+		first = #begin
+			ifTrue: [ ^ self evalBeginSpecialForm: expression in: anEnvironment ].
+	...
 ]]]
 
+[[[
+Phsyche >> evalBeginSpecialForm: expression in: anEnvironment
+	| res |
+	expression allButFirst do: [ :each | res := self eval: each in: anEnvironment ].
+	^ res
+]]]
+
+!!!! A more complex test
 
 Now we can write a more complex test showing that we can change the binding of a variable created over function application.
 
 [[[
 PhyscheTest >> testEvalSetAtCorrectLevel
 	| proc |
-	ph eval: (ph parse: '
+	ph parseAndEval: '
 	(define fy3 
 		((lambda (x)
 			(lambda (y)
@@ -1317,14 +1314,15 @@ PhyscheTest >> testEvalSetAtCorrectLevel
 				3))
 	').
 	proc := ph eval: #fy3.
-	self assert: (ph eval: (ph parse: '(fy3 5)')) equals: 10
+	self assert: (ph parseAndEval: '(fy3 5)') equals: 10
 ]]]
 
-
+We are done. 
 
 !!! Fun with closures
 
-Finally we can develop now little object with an internal state. 
+Finally we can develop now little objects with an internal state. 
+We define a function whose captured environment will keep a number that can only be modified by the function. 
 
 [[[
 (define makeAccount
@@ -1333,7 +1331,11 @@ Finally we can develop now little object with an internal state.
 			(begin 
 				(set! balance (+ balance amount))
 				balance))))
+]]]
 
+Now we can create several accounts each having its own state.
+
+[[[
 (define ac1 (makeAccount 1000))
 (ac1 -200)
 >>> 800
@@ -1344,8 +1346,172 @@ Finally we can develop now little object with an internal state.
 
 !!! Conclusion
 
-This ends our naive and not really object-oriented implementation of a subset of Scheme.
-In the following chapter we will fully revisit the implementation to reduce the complexity of the ==eval:== method.
+This ends our naive implementation of a subset of Scheme.
+In the following chapter we revisit the implementation to reduce the complexity of the ==eval:in:== method.
 
 
+!! Phemoo
 
+This chapter is optional. In this alternate implementation we treat primitives and special forms the same way.
+Basically we create an object for each case and give the object the possibility to specify the full evaluation. 
+
+!!! Reusing tests
+
+To make sure that Phemoo is doing exactly the same as Phsyche we define a subclass to PhsycheTest. 
+
+[[[
+PhsycheTest subclass: #PhemooTest
+	instanceVariableNames: ''
+	classVariableNames: ''
+	package: 'Pheme-Tests'
+]]]
+
+[[[
+PhemooTest >> setUp
+	super setUp.
+	ph := Phemoo new
+]]]
+
+Now using the TestRunner you will be able to run all the tests on a Phemoo instance. 
+
+!!! Phemoo interpreter
+
+Phemoo has the same structure and initialization than Phsyche except that primitives and special form are represented by objects,  instances of their corresponding class in the PhemooPrimitives hierarchy as shown in Figure *@phemoo*
+
+
+[[[
+Object subclass: #Phemoo
+	instanceVariableNames: 'primitives environment'
+	classVariableNames: ''
+	package: 'Pheme-Phemoo'
+]]]
+
++Special forms and primitives are handled in a uniform way.>file://figures/Phemoo.pdf|width=60|label=phemoo+
+
+
+!!! Modeling primitives and special form
+
+Primitives and special form are now expressed as subclasses of PhemooPrimitives.
+Each subclass should define ==valueFor: aCollection with: anInterpreter environment: anEnvironment== and the class method ==tag==.
+
+[[[
+Object subclass: #PhemooPrimitives
+	instanceVariableNames: ''
+	classVariableNames: ''
+	package: 'Pheme-Phemoo'
+]]]
+
+[[[
+PhemooPrimitives >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
+	^ self subclassResponsibility
+]]]
+
+[[[
+PhemooPrimitives >> tag
+	^ self subclassResponsibility 
+]]]
+
+!!!! Plus primitives
+
+For example plus is expressed as follows: 
+
+[[[
+PhemooPrimitives subclass: #PhPlus
+	instanceVariableNames: ''
+	classVariableNames: ''
+	package: 'Pheme-Phemoo'
+]]]
+
+[[[	
+PhPlus class >> tag
+	^ #+
+]]]
+
+[[[
+PhPlus >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
+	^  (anInterpreter eval: aCollection first in: anEnvironment ) 
+			+ (anInterpreter eval: aCollection second in: anEnvironment )
+]]]
+
+!!! if special form
+
+[[[
+PhemooPrimitives subclass: #PhIf
+	instanceVariableNames: ''
+	classVariableNames: ''
+	package: 'Pheme-Phemoo'
+]]]
+
+[[[
+PhIf >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
+	"aCollection: (if cond expr1 expr2)"
+
+	| cond |
+	cond := anInterpreter eval: aCollection first in: anEnvironment.
+	^ cond
+		ifTrue: [ anInterpreter eval: aCollection second in: anEnvironment ]
+		ifFalse: [ anInterpreter eval: aCollection third in: anEnvironment ]
+]]]
+
+[[[	
+PhIf class >> tag
+
+	^ #if
+]]]
+
+!!! Initializing the environment
+
+Now we specialize the initialization of the interpreter as follows: 
+
+[[[
+Phemoo >> initializePrimitives
+	
+	^ PhemooPrimitives allSubclasses 	
+			do: [ :cls | primitives add: cls tag. 
+					environment at: cls tag put: cls new ]
+]]]
+
+!!! Reconsidering eval:in:
+And we are ready to have a simpler and more systematic evaluation logic. 
+
+[[[
+Phemoo >> eval: expression in: anEnvironment
+	expression = #()
+		ifTrue: [ ^ expression ].
+	expression isSymbol
+		ifTrue: [ ^ anEnvironment at: expression ].
+	expression isArray
+		ifFalse: [ ^ expression ]
+		ifTrue: [ (self isPrimitive: expression first)
+				ifTrue: [ ^ self evaluateNonApplicativeOrder: expression in: anEnvironment]
+				ifFalse: [ ^ self evaluateApplicativeOrder: expression in: anEnvironment] ]
+]]]
+
+This method is the same as in Phsyche. 
+[[[
+Phemoo >> evaluateApplicativeOrder: expression in: anEnvironment
+	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
+	| proc applicationEnv |
+	proc := self eval: expression first in: anEnvironment.
+	applicationEnv := proc
+		setEnvironmentForParameters: (expression allButFirst collect: [ :e | self eval: e in: anEnvironment])
+		in: proc environment.	
+	^ self eval: proc body in: applicationEnv.
+]]]
+
+The following method is calling each primitive to execute itself in the environment.
+
+[[[
+Phemoo >> evaluateNonApplicativeOrder: expression in: anEnvironment
+	^ (anEnvironment at: expression first)
+		valueFor: expression allButFirst
+		with: self
+		environment: anEnvironment 
+]]]
+
+We let to the use the redefinition of the primitives and special forms. There is nothing more than in Phsyche. It is just expressed differently.
+We let to the user the refactoring between the two interpreter to extract a common superclass.
+
+!!! Conclusion
+
+We have implemented a more modular implementation. Adding a new behavior is just defining a new subclass with two methods. 
