@@ -1131,7 +1131,7 @@ What is important to see is that the function ==lambda (y)...== will be executed
 
 +Each function application creates an environment and is evaluated in its definition environment.>file://figures/lambda.pdf|width=60|label=envbinding+
 
-We add the environment instance variable to the class ==PProcedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form. 
+We add the environment instance variable to the class ==PProcedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form.
 
 [[[
 Object subclass: #Procedure
