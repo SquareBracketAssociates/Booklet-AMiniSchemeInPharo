@@ -19,7 +19,7 @@ Here is simple function expressing the length of a list and one example.
 			(+ 1 (len2 (cdr l))))))
 ]]]
 
-There is another way to define functions, but for simpliciyty we will focus for now in the kind of definitions making an explicit use of ==lambda==.
+There is another way to define functions, but for simplicity we will focus for now in the kind of definitions making an explicit use of ==lambda==.
 
 Once we defined our function, we can call it as follows:
 
@@ -47,6 +47,46 @@ We will present booleans, number and symbols in details but focus on the procedu
 >>> 11
 ]]]
 
+
+!!!! List operations
+
+Scheme following the path of Lisp offers list operations such as ==list== to create a list, ==car== to access the first element of a list, ==cdr== to access the rest of the list, =='()== to represent the empty list and ==cons== to add an element as first element of a list. Here are some examples showing their use. We do not present dotted list to keep the implementation to the bare minimum.
+
+[[[
+(car (list 1 2 3 4))
+>>> 1
+]]]
+
+[[[
+(cdr (list 1 2 3 4))
+>>> (2 3 4)
+]]]
+
+[[[
+(cons 1 (list 2 3 4))
+>>> (1 2 3 4)
+]]]
+
+[[[
+(cons 1 '())
+>>> (1)
+]]]
+
+[[[
+(cdr (list 1))
+>>> ()
+]]]
+
+[[[
+(null? '())
+>>> #t
+]]]
+
+[[[
+(null? (list 1))
+>>> #f
+]]]
+
 !!!! Procedure application
 Scheme follows a prefixed syntax ==(prog args ...)== where the first element refers to a function and the rest are arguments whose ''values'' is passed to the function. A list represents function application.
 
@@ -62,7 +102,7 @@ By default the evaluation of a procedure application (a list) evaluates all its 
 So far, procedures evaluate ''all'' their arguments before starting executing the procedure. 
 However, we will see later on that some other forms that look like procedures should not evaluate their arguments. 
 This is the case of, for example, ==define==, ==lambda==, ==quote== and ==if==.
-Such procedures are called special-forms and we will have the define their semantics.
+Such procedures are called special-forms and we will have to define their semantics.
 
 !!!! Variable definition
 To define  a variable and set its value, we use the ==define== special form: it sets the value of the second argument to symbol represented by the first argument. Notice that ==define== does not evaluate its first argument, only its second one. 
@@ -172,7 +212,7 @@ This operation is so current that it has a special syntax: ==(quote x)== can be 
 !!!! Program as data
 What is particularly interesting is that the syntax of the language is centered on the one of lists and by just using a single quote or the special function ==quote== we can turn a program into its abstract syntax tree.
 
-In the following example we can access the argument of the ==\+== invocation by simple quoting the invocation and accessing using plain list operator such as ==cdr==.
+In the following example we can access the argument of the ==\+== invocation by simple quoting the invocation and accessing using plain list operator such as ==cdr==. 
 
 [[[
 (cdr (quote (+ 2 3)))
@@ -231,7 +271,7 @@ When implementing language compilers, parsing is the process to takes a text as 
 
 Besides having a compiler, we can also have an interpreter, i.e., a program that executes programs of the implemented language. The idea is that the interpreter will consume the intermediate representation and act adequately. For example, when it sees a variable definition, it will declare in a structure (usually an environment) a binding for such variable.
 
-Note that the view depicted in Figure *@naiveChain* is naive in sense the compiler may also emit abstract instructions (for example bytecode) that will be interpreted by an (bytecode) interpreter and may converted on the fly to assembly code. This is what the Pharo Virtual Machine does.
+Note that the view depicted in Figure *@naiveChain* is naive in sense the compiler may also emit abstract instructions (for example bytecode) that will be interpreted by an (bytecode) interpreter and may be converted on the fly to assembly code. This is what the Pharo Virtual Machine does.
 
 In our interpreter we will take a simpler route. Since Scheme syntax is simple we will just use a simple scanner and our interpreter will take as input the tokens produced by the scanner. We will use the natural structure of the arrays as simple abstract syntax trees.
 

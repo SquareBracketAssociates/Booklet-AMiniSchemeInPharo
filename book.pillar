@@ -10,10 +10,12 @@ As future readings, we suggest ''Structure and Interpretation of Computer Progra
 
 A more personal note. We will implement a subset of Scheme because the language is simple but not trivial, really powerful and also because I love it. And while Pharo is my favorite language, it always has the taste of a Lisp language but with lovely objects. Since I implemented several mini Schemes in Scheme, I got inspired by the (How to Write a (Lisp) Interpreter (in Python)) post of Peter Norvig to write one in Pharo for fun. 
 
+Thanks to Clément Béra for feedback on the early version. 
+
 Please contact me if you noticed I wrote something wrong or not fully precise. 
 
 S. Ducasse (stephane.ducasse@inria.fr)
-23 December 2017
+15 Mars 2018
 
 ${inputFile:Chapters/Scheme.pillar}$
 
