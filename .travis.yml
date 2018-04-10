@@ -17,8 +17,8 @@ env:
 install:
   - git clone https://github.com/pillar-markup/pillar.git -b newpipeline
   - ./pillar/scripts/build.sh 
-  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then . pillar/scripts/travis/ensure_latex.sh; fi
-  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then pillar/scripts/travis/ensure_book_dependencies.sh; fi
+  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then . pillar/scripts/ci/ensure_latex.sh; fi
+  - if [[ ${TYPE} == "Integration" ]] || [[ ${TYPE} == "System" ]]; then pillar/scripts/ci/ensure_book_dependencies.sh; fi
   - if [[ ${TYPE} == "Integration" ]]; then mkdir -p $SMALLTALK_CI_BUILD; fi
   - if [[ ${TYPE} == "Integration" ]]; then cp -r archetypes $SMALLTALK_CI_BUILD; fi
   
