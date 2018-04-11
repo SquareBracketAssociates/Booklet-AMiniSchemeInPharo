@@ -23,7 +23,7 @@ install:
   - if [[ ${TYPE} == "Integration" ]]; then cp -r archetypes $SMALLTALK_CI_BUILD; fi
   
 script:
-  - if [[ ${TYPE} == "System" ]]; then "pillar/pillar build pdf" ${ARCHETYPE} ${OUTPUT}; fi
+  - if [[ ${TYPE} == "System" ]]; then ".pillar/pillar build pdf" ${ARCHETYPE} ${OUTPUT}; fi
 #- "pillar/pillar build pdf"
 
 deploy:
