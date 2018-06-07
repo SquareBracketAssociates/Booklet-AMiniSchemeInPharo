@@ -1,10 +1,9 @@
-
 !! Scheme in a (super) nutshell
 
-We will start with a limited version of Physche, our small functional programming language inspired from Scheme. In the first version, we will not support the definition new functions (also called procedures). In the second version, we will support function definition and in particular closures. We start by presenting the subset of Scheme that we will implement.
+We will start with a limited version of Phsyche, our small functional programming language inspired from Scheme. In the first version, we will not support the definition of new functions (also called procedures). In the second version, we will support function definition and  closures, in particular. We start by presenting the subset of Scheme that we will implement.
 
 
-Our objective here is not to write a Scheme following the latest language specification. We will just cover a tiny subset. Purists may not like what I will write but I take this tiny subset as a pretext for a first exploration. I will present only the parts that we will implement. Physche does not support vectors, dotted pairs, continuations, macros.
+Our objective here is not to write a Scheme following the latest language specification. We will just cover a tiny subset. Purists may not like what I will write but I take this tiny subset as a pretext for a first exploration. I will only present  the parts that we will implement. Phsyche does not support vectors, dotted pairs, continuations, macros.
 
 For a fast yet more complete description of Scheme I like ''Teach yourself Scheme in fixnum days'' by Dorai Sitaram *http://ds26gte.github.io/tyscheme/index.html*.
 
@@ -19,7 +18,7 @@ Here is simple function expressing the length of a list and one example.
 			(+ 1 (len2 (cdr l))))))
 ]]]
 
-There is another way to define functions, but for simplicity we will focus for now in the kind of definitions making an explicit use of ==lambda==.
+There is another way to define functions, but for simplicity we will focus for now on definitions making an explicit use of ==lambda==.
 
 Once we defined our function, we can call it as follows:
 
@@ -30,12 +29,15 @@ Once we defined our function, we can call it as follows:
 
 !!!! S-Expressions
 In Scheme, everything is a s-expression. A S-expression can be:
-- atomic for booleans (==#t==, ==#f==), number (==1==), symbols (we will treat strings as atomic),
-- compound as with lists:  A list starts with the opening parenthesis ==(== and finishes by a closing one ==)==. Lists  also represent procedure application, and
-- a procedure:  procedures can be normal (i.e., evaluating all their arguments) or special-forms (i..e, having special ways to evaluate their arguments. This is needed to build control-flow for example).
+- atomic for booleans (==#t==, ==#f==), number (==1==), symbols (we will treat strings as atomic).
+- compound as with lists:  A list starts with an opening parenthesis ==(== and finishes by a closing one ==)==. Lists  also represent procedure application.
+- a procedure:  procedures can be normal (i.e., evaluating all their arguments) or special-forms (i.e., having special ways to evaluate their arguments. This is needed to build control-flow for example).
 
 !!!! Values
-We will present booleans, number and symbols in details but focus on the procedure applications since this is a much more interesting concept. Still there is one important point to raise: the value of an atomic expression is itself. This is important since we will see that the value of list is function application.
+We briefly present  booleans, numbers and symbols. Then we focus on procedure application since this is a much more interesting concept.
+
+Still there is one important point to raise: the value of an atomic expression is itself.
+We will see that the value of list is function application: it applies the value of the first element on the value of the rest of the list.
 
 [[[
 #t 
@@ -50,7 +52,7 @@ We will present booleans, number and symbols in details but focus on the procedu
 
 !!!! List operations
 
-Scheme following the path of Lisp offers list operations such as ==list== to create a list, ==car== to access the first element of a list, ==cdr== to access the rest of the list, =='()== to represent the empty list and ==cons== to add an element as first element of a list. Here are some examples showing their use. We do not present dotted list to keep the implementation to the bare minimum.
+Scheme, in the path of Lisp, offers list operations such as ==list== to create a list, ==car== to access the first element of a list, ==cdr== to access the rest of the list, =='()== to represent the empty list, and ==cons== to add an element as first element of a list. Here are some examples showing their use. We do not present dotted list or pairs to keep the implementation to the bare minimum.
 
 [[[
 (car (list 1 2 3 4))
@@ -88,21 +90,21 @@ Scheme following the path of Lisp offers list operations such as ==list== to cre
 ]]]
 
 !!!! Procedure application
-Scheme follows a prefixed syntax ==(prog args ...)== where the first element refers to a function and the rest are arguments whose ''values'' is passed to the function. A list represents function application.
+Scheme follows a prefixed syntax ==(prog args ...)== where the first element refers to a function and the rest are arguments whose ''values'' are passed to the function. A list represents function application.
 
 [[[
 (+ (* 3 2) 5)
->>> 30
+>>> 11
 ]]]
 
-The procedure associated with the symbol ==\+== is looked up and the values of the arguments ==(* 3 2)== and ==5== are computed and passed to procedure.
+In the code above, the procedure associated with the symbol ==\+== is looked up and the values of the arguments ==(* 3 2)== and ==5== are computed and passed to procedure.
 
 By default the evaluation of a procedure application (a list) evaluates all its components. The procedure returned as value of the first element is applied to the values returned for the rest of the list.
 
-So far, procedures evaluate ''all'' their arguments before starting executing the procedure. 
-However, we will see later on that some other forms that look like procedures should not evaluate their arguments. 
-This is the case of, for example, ==define==, ==lambda==, ==quote== and ==if==.
-Such procedures are called special-forms and we will have to define their semantics.
+So far, procedures evaluate ''all'' their arguments before executing the procedure.
+However, we will see later on that some other forms that look like procedures should not evaluate all their arguments.
+For example, this is the case of  ==define==, ==lambda==, ==quote== and ==if==.
+Such procedures are called special-forms and we will have to define their semantics one by one.
 
 !!!! Variable definition
 To define  a variable and set its value, we use the ==define== special form: it sets the value of the second argument to symbol represented by the first argument. Notice that ==define== does not evaluate its first argument, only its second one. 
@@ -146,7 +148,7 @@ To reuse a function in a program, we can assign a procedure to variable using ==
 
 
 !!!! Closures
-Now a closure is more than a function. A closure refers to its definition environment. 
+Now a closure is more than a function. A closure refers to its ''definition''Phsyche environment. 
 The following example illustrates it. It defines a function that returns a function. This function (having ==y== as a parameter) will add x to y and x is bound to 3 due to the application of the first function. 
 The function y is a closure that has an environment in which the variable x is bound to 3.
 
@@ -207,17 +209,7 @@ For example, the following expressions returns then a list which looks like a fu
 >>> (quote 1)
 ]]]
 
-This operation is so current that it has a special syntax: ==(quote x)== can be written =='x==. Physche will not support the =='== notation.
-
-!!!! Program as data
-What is particularly interesting is that the syntax of the language is centered on the one of lists and by just using a single quote or the special function ==quote== we can turn a program into its abstract syntax tree.
-
-In the following example we can access the argument of the ==\+== invocation by simple quoting the invocation and accessing using plain list operator such as ==cdr==. 
-
-[[[
-(cdr (quote (+ 2 3)))
->>> (2 3)
-]]]
+This operation is so current that it has a special syntax: ==(quote x)== can be written =='x==. Phsyche will not support the =='== notation.
 
 !!!! List as data
 To manipulate a list we can simply quote it.
@@ -244,18 +236,33 @@ The following primitive procedures allows one to manipulate lists: ==car== (to a
 >>> (1 2 3 4)
 ]]]
 
+!!!! Program as data
+What is particularly interesting is that the syntax of the language is centered on the syntax of lists and on the unification between lists as a data structure and function application. 
 
-!!! Physche's overview
+In addition, what is really powerful is that ==quote== is the bridge between function application and data structure. Indeed,  the special function ==quote== we can turn a program into its abstract syntax tree and we can access its elements using 
+normal list operations such as ==car== or ==cdr==. 
 
-Since we do not want to have to build a full parser, we will bend a bit the syntax of Physche to be compatible with the one of Pharo.
-- Booleans will be represented as ==true== and ==false== instead of ==#t== and ==#f==.
-- Numbers will be the one of Pharo.
+In the following example, we can access the argument of the ==\+== application by simply quoting the invocation. Then we can  access its elements using plain list operators such as ==cdr==. 
+
+[[[
+(cdr (quote (+ 2 3)))
+>>> (2 3)
+]]]
+
+
+
+
+!!! Phsyche's overview
+
+Since we do not want to have to build a full parser, we will bend a bit the syntax of Phsyche to be compatible with the one of Pharo.
+- Booleans are represented as ==true== and ==false== instead of ==#t== and ==#f==.
+- Numbers are the ones of Pharo.
 - Symbols and strings will be the ones of Pharo:  ==#pharo== and == 'pharo'==.
-- Lists will be represented as arrays to be able to get benefit from the scanner facilities of Pharo as we will explained just after. The empty list is represented by ==#()==.
+- Lists will be represented as arrays to be able to get benefit from the scanner facilities of Pharo as we will explain right after. The empty list is represented by ==#()==.
 
 
-We are now ready to implement the first version of Physche. 
-We will start with a first version that does not include closure and function definition. Then in a second iteration we will add closures and function definition. 
+We are now ready to implement the first version of Phsyche.
+We will start with a first version that only let programmers to express procedure use and composition without having the possibility to define their own functions. Then in a second iteration we will add closures and function definition. 
 
 
 
@@ -352,9 +359,9 @@ As an exercise, we suggest you to represent lists with pairs as in traditional L
 Now we are ready to interpret the parsed programs.
 
 
-!! Limited Physche 
+!! Limited Phsyche 
 
-Now we will add the evaluation for the limited Physche that we mentioned previously: we will not manage lambda function definition and closures.
+Now we will add the evaluation for the limited Phsyche that we mentioned previously: we will not manage lambda function definition and closures.
 
 !!! Evaluating elementary elements
 
@@ -504,7 +511,7 @@ Phsyche >> eval: expression in: anEnvironment
 
 !!! Setting up the primitives
 
-Now we will introduce some primitives behavior such as addition, multiplication, list manipulation. In this implementation of Physche we will define them as block closures (a more object-oriented implementation reifying the operations is possible as we will show in the latest chapter of this booklet). Let us write a test first to specify what we want to get.
+Now we will introduce some primitives behavior such as addition, multiplication, list manipulation. In this implementation of Phsyche we will define them as block closures (a more object-oriented implementation reifying the operations is possible as we will show in the latest chapter of this booklet). Let us write a test first to specify what we want to get.
 
 [[[
 PhsycheTest >> testEvalExpression
@@ -732,7 +739,7 @@ PhsycheTest >> testEvalIfNoSpurious
 Now we can define the ==if== special form.
 
 [[[
-Physche >> eval: expression in: anEnvironment
+Phsyche >> eval: expression in: anEnvironment
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
@@ -754,7 +761,7 @@ Physche >> eval: expression in: anEnvironment
 
 And we define the semantics of ==if== execution as follows: 
 [[[
-Physche >> evalIfSpecialForm: expression in: anEnvironment
+Phsyche >> evalIfSpecialForm: expression in: anEnvironment
 	^ (self eval: expression second in: anEnvironment)
 		ifTrue: [ self eval: expression third in: anEnvironment ]
 		ifFalse: [ self eval: expression fourth in: anEnvironment ]
@@ -820,7 +827,7 @@ Let us define some tests...
 TestCase subclass: #PEnvironmentTest
 	instanceVariableNames: 'outer inner'
 	classVariableNames: ''
-	package: 'Physche'
+	package: 'Phsyche'
 ]]]
 
 Our setup makes sure that the inner environment is pointing to another context.
@@ -873,7 +880,7 @@ An environment is just one special kind of dictionary that when it does not find
 Dictionary subclass: #PEnvironment
 	instanceVariableNames: 'outerEnvironment'
 	classVariableNames: ''
-	package: 'Physche'
+	package: 'Phsyche'
 ]]]
 
 We need an accessor to set the outer context.
@@ -904,7 +911,7 @@ We need a way to represent a function. A function has a list of parameter and a 
 Let us start to write a test. 
 
 [[[
-PhyscheTest >> testProcedureDefinition
+PhsycheTest >> testProcedureDefinition
 	| proc |
 	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
 	proc := ph parseAndEval: #squared.
@@ -926,7 +933,7 @@ Now we will extend the interpreter to create procedure. When an expression start
 
 
 [[[
-Physche >> eval: expression in: anEnvironment
+Phsyche >> eval: expression in: anEnvironment
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
@@ -948,7 +955,7 @@ Physche >> eval: expression in: anEnvironment
 ]]]
 
 [[[
-Physche >> evalLambdaSpecialForm: expression in: anEnvironment
+Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
 	^ PProcedure new
 		parameters: expression second;
 		body: expression third
@@ -957,7 +964,7 @@ Physche >> evalLambdaSpecialForm: expression in: anEnvironment
 Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. 
 
 
-Now Physche supports the ''definition'' of procedures but not their application. Let us look at that now.
+Now Phsyche supports the ''definition'' of procedures but not their application. Let us look at that now.
 
 !!! Function application
 
@@ -966,12 +973,12 @@ As we saw languages following Lisp like syntax follow the pattern ==(proc args)=
 Let us write tests to control such a behavior. 
 
 [[[
-PhyscheTest >> testLambdaProcedureExecution
+PhsycheTest >> testLambdaProcedureExecution
 	self assert: (ph parseAndEval: '((lambda (x) (* x x)) 3)') equals: 9.
 ]]]
 
 [[[
-PhyscheTest >> testProcedureExecution
+PhsycheTest >> testProcedureExecution
 	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
 	self assert: (ph parseAndEval: '(squared 3)') equals: 9
 ]]]
@@ -1063,7 +1070,7 @@ Now we are ready to implement closures.
 
 
 
-!! Adding closures to Physche
+!! Adding closures to Phsyche
 
 Now we add closures to Phsyche. A closure is a function capturing the environment in which is defined. We start studying some examples and then we will implement on the closure semantics.
 
@@ -1140,7 +1147,7 @@ To test that ==lambda== effectively creates an environment. We can use this expr
 Here the nested function having y as parameter is just returning the value of x. And during the function execution, the value of x will be looked up in the created environment. Here is a first test. Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. 
  
 [[[
-PhyscheTest >> testSimpleClosureIntrospection
+PhsycheTest >> testSimpleClosureIntrospection
 
 	| proc |
 	ph eval: (ph parseAndEval: '(define fy3 
@@ -1155,7 +1162,7 @@ PhyscheTest >> testSimpleClosureIntrospection
 
 
 [[[
-PhyscheTest >> testSimpleClosure
+PhsycheTest >> testSimpleClosure
 
 	| res |
 	res := ph eval: (ph parse: '(
@@ -1270,7 +1277,7 @@ PEnvironment >> lookupAt: aKey put: aValue
 Now we write a simple test checking that we can change the value of a binding. We will add more complex tests once we get ==begin== implemented.
 
 [[[
-PhyscheTest >> testEvalSimpleSet
+PhsycheTest >> testEvalSimpleSet
 	self assert: (ph parseAndEval: '(define x2 21') equals: #undefined.
 	self assert: (ph parseAndEval: '(set x2 22)') equals: #undefined.
 	self assert: (ph parseAndEval: 'x2') equals: 22.
@@ -1304,12 +1311,12 @@ Our tests should pass.
 The special form ==begin== just evaluates one after the other the expressions in the list and return the value of the last one. The following tests are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
 
 [[[
-PhyscheTest >> testEvalBegin
+PhsycheTest >> testEvalBegin
 	self assert: (ph parseAndEval: '(begin 1 2 3)') equals: 3
 ]]]
 
 [[[
-PhyscheTest >> testEvalBeginSet
+PhsycheTest >> testEvalBeginSet
 	self assert: (ph parseAndEval:  '(begin (define x 1) (set x 2) x)') equals: 2
 ]]]
 
@@ -1342,7 +1349,7 @@ Phsyche >> evalBeginSpecialForm: expression in: anEnvironment
 Now we can write a more complex test showing that we can change the binding of a variable created over function application.
 
 [[[
-PhyscheTest >> testEvalSetAtCorrectLevel
+PhsycheTest >> testEvalSetAtCorrectLevel
 	| proc |
 	ph parseAndEval: '
 	(define fy3 
