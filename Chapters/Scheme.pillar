@@ -542,6 +542,9 @@ Phsyche >> plusBinding
 The method ==multBinding== returns a pair containing the primitive name and its associated Pharo closure.
 The environment will contain a binding whose value is the primitive name (==\#\+==) and whose value will be the corresponding block.
 
+
+!!!! Primitive environment initialization
+
 To represent the environment, the interpreter defines one instance variable ==environment== initialized to a dictionary. It has a ==primitives== collection to keep the names of the primitives. 
 [[[
 Object subclass: #Phsyche
@@ -569,8 +572,8 @@ Phsyche >> initializeEnvBindings
 	(self class selectors select: [ :each | each endsWith: 'Binding' ])
 		do: [ :s | 
 				| binding |
-				binding := self perform: s. 
-				primitives add: binding key. 
+				binding := self perform: s.
+				primitives add: binding key.
 				environment at: binding key put: binding value ]
 ]]]
 
@@ -581,13 +584,24 @@ The following expression returns the list of method selectors that ends with 'Bi
 ]]]
 
 
-
 We take the opportunity to add the primitive name to the list of primitives since it will help use later during the evaluation.
 
+!!!! Handling primitive evaluation
+
+We are ready to implement the evaluation of a call ==(primitive arg1 ... argn)==. The method ==evalPrimitive:in:==  finds the block closure and  executes it with the values of the arguments. The method ==valueWithPossibleArgs:== 
+executes a block closure paying attention to the possible multiple number of required arguments.
+
+[[[
+Phsyche >> evalPrimitive: exp in: anEnvironment
+
+	^ (anEnvironment at: exp first) 
+			valueWithPossibleArgs: (exp allButFirst collect: [ :e | self eval: e in: anEnvironment])
+]]]
+
+What is interesting in this method is that this is the place that defines the semantics of the evaluation of argument calls. Here we see that the arguments are all evaluated from left to right.
 
 
-
-Now we should change the ==eval:in:== method to take into account that we have now to support primitives call. What is interesting is that we have to be clear about the semantic of primitive execution, obviously. We know that we can get the closure associated to the primitive name in the environment,  and a primitive should evaluate all its arguments and pass to the closure.
+We should change the ==eval:in:== method to take into account that we have support for primitive call. What is interesting is that we have to be clear about the semantic of primitive execution, obviously. We know that we can get the closure associated to the primitive name in the environment, and a primitive should evaluate all its arguments and pass to the closure.
 
 [[[
 Phsyche >> eval: expression in: anEnvironment
@@ -610,12 +624,12 @@ Phsyche >> eval: expression in: anEnvironment
 At this point our tests should all pass.
 
 !!!! Some consideration
-Note that for now we consider that the mathematical operations are only working on pairs and not list of elements. We can do this changing the closure application. Another point to consider is that explicit check for primitives prevent us to overload locally their definition and this could be changed.
+Note that for now we consider that the mathematical operations are only working on pairs and not list of elements. Another point to consider is that explicit check for primitives in the environment prevents us to overload locally their definition and this could be changed.
 
 
 !!!! Some more arithmetic primitives
 
-Here are the definitions for more primitives
+Here are  definitions for more primitives
 
 [[[
 Phsyche >> isEqualBinding
