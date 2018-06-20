@@ -22,7 +22,7 @@ There is another way to define functions, but for simplicity we will focus for n
 
 Once we defined our function, we can call it as follows:
 
-[[[
+[[[testcase=true
 (len2 (list 4 1 3 3))
 >>> 4
 ]]]
@@ -39,12 +39,12 @@ We briefly present  booleans, numbers and symbols. Then we focus on procedure ap
 Still there is one important point to raise: the value of an atomic expression is itself.
 We will see that the value of list is function application: it applies the value of the first element on the value of the rest of the list.
 
-[[[
+[[[testcase=true
 #t 
 >>> #t
 ]]]
 
-[[[
+[[[testcase=true
 11 
 >>> 11
 ]]]
