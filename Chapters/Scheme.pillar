@@ -752,7 +752,7 @@ Now we can get back to the implementation of more special forms.
 
 !!! Adding if
 
-Now we are ready to implement ==if==. If is a special form since it does not evaluate all its arguments. Indeed, ==if== should only evaluate the correct argument based on the boolean value. 
+Now we are ready to implement ==if==. It has the following form: ==(if condition iftrue iffalse)==. ==If== is a special form since it does not evaluate all its arguments. Indeed, ==if== should only evaluate the correct argument based on the boolean value. 
 
 
 [[[
