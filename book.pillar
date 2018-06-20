@@ -16,5 +16,5 @@ Please contact me if you noticed I wrote something wrong or not fully precise.
 S. Ducasse (stephane.ducasse@inria.fr)
 7 June 2018
 
-${inputFile:value=Chapters/Scheme.pillar}$
+${inputFile:path=Chapters/Scheme.pillar}$
 
