@@ -694,10 +694,10 @@ PhsycheTest >> isNotBinding
 
 !!! Adding list primitives
 
-Now we should add some primitives to manage list such as the elementary operations ==cons==, ==car==, and ==cdr==.
+We should add some primitives to manage lists such as the elementary operations ==cons==, ==car==, and ==cdr==.
 
-Here are some tests to make sure that such primitives are acting as we expect it.
-Note that we expect consing is working only on list and does not produce dotted pairs.
+Here are some tests to make sure that such primitives are acting as expected.
+Note that we consider that ==cons== is only working on lists and does not produce dotted pairs.
 
 [[[
 PhsycheTest >> testEvalListExpression
@@ -752,8 +752,7 @@ Now we can get back to the implementation of more special forms.
 
 !!! Adding if
 
-Now we are ready to implement ==if==. It has the following form: ==(if condition iftrue iffalse)==. ==If== is a special form since it does not evaluate all its arguments. Indeed, ==if== should only evaluate the correct argument based on the boolean value. 
-
+We are ready to implement ==if==. It has the following form: ==(if condition iftrue iffalse)==. ==if== is a special form since it does not evaluate all its arguments. Indeed, ==if== should only evaluate the correct argument based on the boolean value. 
 
 [[[
 PhsycheTest >> testEvalIf
@@ -770,8 +769,15 @@ PhsycheTest >> testEvalIfNoSpurious
 	self assert: (ph eval: (ph parse: '(if false (/ 5 0) 5)')) equals: 5
 ]]]
 
-Now we can define the ==if== special form.
+And we define the semantics of ==if== as follows: 
+[[[
+Phsyche >> evalIfSpecialForm: expression in: anEnvironment
+	^ (self eval: expression second in: anEnvironment)
+		ifTrue: [ self eval: expression third in: anEnvironment ]
+		ifFalse: [ self eval: expression fourth in: anEnvironment ]
+]]]
 
+And we can introduce this new method to the main ==eval:in:== method as follows: 
 [[[
 Phsyche >> eval: expression in: anEnvironment
 	expression = #()
@@ -793,22 +799,17 @@ Phsyche >> eval: expression in: anEnvironment
 					]
 ]]]
 
-And we define the semantics of ==if== execution as follows: 
-[[[
-Phsyche >> evalIfSpecialForm: expression in: anEnvironment
-	^ (self eval: expression second in: anEnvironment)
-		ifTrue: [ self eval: expression third in: anEnvironment ]
-		ifFalse: [ self eval: expression fourth in: anEnvironment ]
-]]]
-	
-Now all our lovely tests are passing. 
 
-Now our implementation is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter.
+All our lovely tests are passing. 
+
+As a short conclusion, our interpreter supports the execution of expression but it is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter as well as the definition of closures (functions which refer to the defining environment).
 
 
-!! Adding functions as a step towards closures
-Now we will add user function and function application to Phsyche. It is a first step towards closures.
-We go step by step to describe the different aspects. 
+!! Function definitions as a step towards closures
+
+We will add user function and function application to Phsyche.
+We go step by step to describe the different aspects of function definition and application. 
+In the next chapter we will introduce closures. 
 
 !!! Function
 Let us start with a first function definition.
@@ -820,14 +821,14 @@ Let us start with a first function definition.
 		(* pi (* r r))))
 ]]]
 
-Now we can execute the function: 
+We can execute the function: 
 [[[
 (area 10)
 >>> 314
 ]]]
 
 Let us analyse the definition and application of the function ==area==.
-What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During its execution it gets the value of the argument.
+What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During ==(area 10)== execution, ==r== gets the value of the argument (here 10).
 
 Let us check that the argument value takes precedence over variables defined in outer scope.
 
@@ -839,23 +840,28 @@ Let us check that the argument value takes precedence over variables defined in 
 		(* pi (* r r))))
 ]]]
 
-Now the application.
+We define a variable ==r== with 5 as value and the function ==area== has an argument with the same name.
+
 [[[
 (area 10)
 >>> 314
 ]]]
 
+The execution of ==(area 10)== shows that the argument takes precedence over the value of ==r== defined previously.
+
 +Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
 
-It means that a function should have its own environment during application but that this environment should be linked to the global one. Indeed in the first definition of ==area== the variable ==pi== is found (Figure *@areaEnvi*). Therefore we will define an environment. 
+It means that during function application, an environment should be created with the parameter and its value. The body of the function should be evaluated within the context of such environment.
+In addition this environment should be linked to the global one. Indeed in the definition of ==area== accesses the variable ==pi== (Figure *@areaEnvi*). Therefore we will define an environment.
 
 !!! Defining an environment class
-An environment is just a dictionary that when a binding is not found locally continues the binding lookup in another environment called its parent or an outer scope (See Figure *@twoEnvironment*)
+
+An environment is an ordered list of bindings. It can also be seen as an ordered dictionary that when a binding is not found locally continues the binding lookup in another environment called its parent or an outer scope (See Figure *@twoEnvironment*).
 
 
 +Examples of environment.>file://figures/twoEnvironments.pdf|width=60|label=twoEnvironment+
 
-Let us define some tests...
+Let us define some tests first
 
 [[[
 TestCase subclass: #PEnvironmentTest
