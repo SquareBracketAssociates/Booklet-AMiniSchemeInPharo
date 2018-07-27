@@ -805,13 +805,13 @@ All our lovely tests are passing.
 As a short conclusion, our interpreter supports the execution of expression but it is really limited in the sense that we cannot add new functions. This is what we will address in the next chapter as well as the definition of closures (functions which refer to the defining environment).
 
 
-!! Function definitions as a step towards closures
+!! Function definition and application
 
 We will add user function and function application to Phsyche.
 We go step by step to describe the different aspects of function definition and application. 
 In the next chapter we will introduce closures. 
 
-!!! Function
+!!! About environments
 Let us start with a first function definition.
 
 [[[
@@ -830,7 +830,7 @@ We can execute the function:
 Let us analyse the definition and application of the function ==area==.
 What is important to see is that during the application ==(area 10)==, the argument ==r== acts as a local variable of the function. During ==(area 10)== execution, ==r== gets the value of the argument (here 10).
 
-Let us check that the argument value takes precedence over variables defined in outer scope.
+The following program checks that the argument value takes precedence over variables defined in outer scope.
 
 [[[
 (define r 5)
@@ -847,19 +847,25 @@ We define a variable ==r== with 5 as value and the function ==area== has an argu
 >>> 314
 ]]]
 
-The execution of ==(area 10)== shows that the argument takes precedence over the value of ==r== defined previously.
+The execution of ==(area 10)== shows several important points:
+# During function application, an environment should be created with the parameter and its value. The body of the function should be evaluated within the context of such an environment.
+# Second the argument value takes precedence over the value of ==r== defined previously.
+# Third, when executing the body of ==area== we should be able to access variable defined in ''outer'' scope such as ==pi==.
+
+
+We used a simple dictionary to represent an environment to store variables and their value. 
+But this is not sufficient because it makes the lookup of outer variables more cumbersome. We should use a list of bindings: an environment.
+This way the environment created during the function application can be linked to the global as shown in Figure *@areaEnvi*. With environments, we can also have function application nested into function application without any problems. 
+
 
 +Function application creates an environment.>file://figures/areaEnvironment.pdf|width=60|label=areaEnvi+
 
-It means that during function application, an environment should be created with the parameter and its value. The body of the function should be evaluated within the context of such environment.
-In addition this environment should be linked to the global one. Indeed in the definition of ==area== accesses the variable ==pi== (Figure *@areaEnvi*). Therefore we will define an environment.
-
 !!! Defining an environment class
 
-An environment is an ordered list of bindings. It can also be seen as an ordered dictionary that when a binding is not found locally continues the binding lookup in another environment called its parent or an outer scope (See Figure *@twoEnvironment*).
+An environment is kind of linked list of bindings. It can also be seen as a dictionary that when a binding is not found locally continues the binding lookup in another environment (called its parent or outer scope). Figure *@twoEnvironment* shows an example of environments.
 
 
-+Examples of environment.>file://figures/twoEnvironments.pdf|width=60|label=twoEnvironment+
++Two graphical representations of environments.>file://figures/twoEnvironments.pdf|width=60|label=twoEnvironment+
 
 Let us define some tests first
 
@@ -879,7 +885,7 @@ PEnvironmentTest >> setUp
 	inner outerEnvironment: outer
 ]]]
 
-The first test is to check that we can access the values set in the each level. 
+The first test is to check that we can access the values set in each scope.
 
 [[[
 PEnvironmentTest >> testLookupAtRightLevel
@@ -889,7 +895,7 @@ PEnvironmentTest >> testLookupAtRightLevel
 	self assert: (inner at: #son) equals: 'riri'
 ]]]
 
-The second test is to check that we can reach the outer value from the inner one.
+The second test is to check that we can reach the outer value from the inner scope.
 
 [[[
 PEnvironmentTest >> testLookingOuterFromInner
@@ -909,12 +915,13 @@ PEnvironmentTest >> testLookupInFails
 	self should: [ inner at: #nodad ] raise: KeyNotFound
 ]]]
 
-We will improve the environment implementation to cover the definition of new binding but we will do that when we will add functionality
-to change the value of binding (i.e., implementing ==set== in Phsyche).
+We will improve the environment implementation to cover the definition of new binding but we will do that when we will add functionality to change the value of binding (i.e., when we will  implement the primitive ==set== for example).
 
 
 !!! Implement an environment class
-An environment is just one special kind of dictionary that when it does not find the value of a key, looks up in its father dictionary and this recursively.  We define the class ==PEnvironment== as a subclass of ==Dictionary== as follows: 
+There are multiple ways to implement an environment. 
+Our implementation is just one special kind of dictionary that when it does not find the value associated to a key, looks up in its father dictionary.
+We define the class ==PEnvironment== as a subclass of ==Dictionary== as follows: 
 
 [[[
 Dictionary subclass: #PEnvironment
@@ -930,7 +937,7 @@ PEnvironment >> outerEnvironment: anEnvironment
 	outerEnvironment := anEnvironment
 ]]]
 
-We redefine the method ==at:== so that we look up first locally for a value. When this is the case we return it, else when there is an outer environment we recursively try to access the value. When there is no outer environment, we simply execute the default behavior which will lead to raise an error.
+We redefine the method ==at:== so that we first look up locally for a value. If the value is found, we return it, else when there is an outer environment we look the value in this outer environment. If there is no outer environment, we simply execute the default behavior which will lead to raise an error.
 
 [[[
 PEnvironment >> at: aKey
@@ -943,7 +950,7 @@ PEnvironment >> at: aKey
 		ifNotNil: [ :v | v ]
 ]]]
 
-Now we are ready to define what is a procedure (or function).  
+Now we are ready to define what a procedure (or function) is.
 
 !!! Procedure definition
 
