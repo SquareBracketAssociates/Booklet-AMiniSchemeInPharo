@@ -22,7 +22,7 @@ There is another way to define functions, but for simplicity we will focus for n
 
 Once we defined our function, we can call it as follows:
 
-[[[testcase=true
+[[[
 (len2 (list 4 1 3 3))
 >>> 4
 ]]]
@@ -30,21 +30,21 @@ Once we defined our function, we can call it as follows:
 !!!! S-Expressions
 In Scheme, everything is a s-expression. A S-expression can be:
 - atomic for booleans (==#t==, ==#f==), number (==1==), symbols (we will treat strings as atomic).
-- compound as with lists:  A list starts with an opening parenthesis ==(== and finishes by a closing one ==)==. Lists  also represent procedure application.
-- a procedure:  procedures can be normal (i.e., evaluating all their arguments) or special-forms (i.e., having special ways to evaluate their arguments. This is needed to build control-flow for example).
+- compound as with lists:  A list starts with an opening parenthesis ==(== and finishes by a closing one ==)==. Lists  also represent function application.
+- a function: functions can be normal (i.e., evaluating all their arguments) or special-forms (i.e., having special ways to evaluate their arguments. This is needed to build control-flow for example).
 
 !!!! Values
-We briefly present  booleans, numbers and symbols. Then we focus on procedure application since this is a much more interesting concept.
+We briefly present  booleans, numbers and symbols. Then we focus on function application since this is a much more interesting concept.
 
 Still there is one important point to raise: the value of an atomic expression is itself.
 We will see that the value of list is function application: it applies the value of the first element on the value of the rest of the list.
 
-[[[testcase=true
+[[[
 #t 
 >>> #t
 ]]]
 
-[[[testcase=true
+[[[
 11 
 >>> 11
 ]]]
@@ -89,22 +89,22 @@ Scheme, in the path of Lisp, offers list operations such as ==list== to create a
 >>> #f
 ]]]
 
-!!!! Procedure application
-Scheme follows a prefixed syntax ==(prog args ...)== where the first element refers to a function and the rest are arguments whose ''values'' are passed to the function. A list represents function application.
+!!!! Function application
+Scheme follows a prefixed syntax ==(function args ...)== where the first element refers to a function and the rest are arguments whose ''values'' are passed to the function. A list represents function application.
 
 [[[
 (+ (* 3 2) 5)
 >>> 11
 ]]]
 
-In the code above, the procedure associated with the symbol ==\+== is looked up and the values of the arguments ==(* 3 2)== and ==5== are computed and passed to procedure.
+In the code above, the function associated with the symbol ==\+== is looked up and the values of the arguments ==(* 3 2)== and ==5== are computed and passed to function.
 
-By default the evaluation of a procedure application (a list) evaluates all its components. The procedure returned as value of the first element is applied to the values returned for the rest of the list.
+By default the evaluation of a function application (a list) evaluates all its components. The function returned as value of the first element is applied to the values returned for the rest of the list.
 
-So far, procedures evaluate ''all'' their arguments before executing the procedure.
-However, we will see later on that some other forms that look like procedures should not evaluate all their arguments.
+So far, functions evaluate ''all'' their arguments before executing the function.
+However, we will see later on that some other forms that look like functions should not evaluate all their arguments.
 For example, this is the case of  ==define==, ==lambda==, ==quote== and ==if==.
-Such procedures are called special-forms and we will have to define their semantics one by one.
+Such functions are called special-forms and we will have to define their semantics one by one.
 
 !!!! Variable definition
 To define  a variable and set its value, we use the ==define== special form: it sets the value of the second argument to symbol represented by the first argument. Notice that ==define== does not evaluate its first argument, only its second one. 
@@ -118,15 +118,15 @@ pi
 >>> 3.14
 ]]]
 
-!!!! Defining and applying procedures
-To define a procedure we use the ==lambda== special form. Its first argument is a list representing the procedure arguments and the second argument the body of the procedure.
+!!!! Defining and applying functions
+To define a function we use the ==lambda== special form. Its first argument is a list representing the function arguments and the second argument the body of the function.
 
 [[[
 (lambda (x)
 	(+ 2 x))
 ]]]
 
-To use this procedure, we need to apply it an argument using the form ==(proc args)==. The following piece of code shows how we can apply the argument 3.
+To use this function, we need to apply it an argument using the form ==(function args)==. The following piece of code shows how we can apply the argument 3.
 
 [[[
 ((lambda (x)
@@ -135,7 +135,7 @@ To use this procedure, we need to apply it an argument using the form ==(proc ar
 >>> 5
 ]]]
 
-To reuse a function in a program, we can assign a procedure to variable using ==define==.
+To reuse a function in a program, we can assign a function to variable using ==define==.
 [[[
 (define add2 (lambda (x) (+ 2 x)))
 
@@ -214,7 +214,7 @@ This operation is so current that it has a special syntax: ==(quote x)== can be 
 !!!! List as data
 To manipulate a list we can simply quote it.
 
-The following primitive procedures allows one to manipulate lists: ==car== (to access the first element), ==cdr== (to access the rest of the list), ==cons== (to create a list) and ==()== represents the empty list.
+The following primitive functions allow one to manipulate lists: ==car== (to access the first element), ==cdr== (to access the rest of the list), ==cons== (to create a list) and ==()== represents the empty list.
 
 [[[
 (quote (1 2 3 4))
@@ -261,7 +261,7 @@ Since we do not want to have to build a full parser, we will bend a bit the synt
 
 
 We are now ready to implement the first version of Phsyche.
-We will start with a first version that only let programmers to express procedure use and composition without having the possibility to define their own functions. Then in a second iteration we will add closures and function definition. 
+We will start with a first version that only let programmers to express function use and composition without having the possibility to define their own functions. Then in a second iteration we will add closures and function definition. 
 
 
 
@@ -807,7 +807,7 @@ As a short conclusion, our interpreter supports the execution of expression but 
 
 !! Function definition and application
 
-We will add user function and function application to Phsyche.
+We will add user function (also called procedure in some languages) and function application to Phsyche.
 We go step by step to describe the different aspects of function definition and application. 
 In the next chapter we will introduce closures. 
 
@@ -876,7 +876,7 @@ TestCase subclass: #PEnvironmentTest
 	package: 'Phsyche'
 ]]]
 
-Our setup makes sure that the inner environment is pointing to another context.
+Our setup makes sure that the ==inner== environment is pointing to another context called ==outer== here.
 
 [[[
 PEnvironmentTest >> setUp
@@ -950,15 +950,15 @@ PEnvironment >> at: aKey
 		ifNotNil: [ :v | v ]
 ]]]
 
-Now we are ready to define what a procedure (or function) is.
+Now we are ready to define what a function is.
 
-!!! Procedure definition
+!!! Function definition
 
 We need a way to represent a function. A function has a list of parameter and a body.
 Let us start to write a test. 
 
 [[[
-PhsycheTest >> testProcedureDefinition
+PhsycheTest >> testFunctionDefinition
 	| proc |
 	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
 	proc := ph parseAndEval: #squared.
@@ -966,17 +966,16 @@ PhsycheTest >> testProcedureDefinition
 	self assert: proc body equals: #(#* #x #x)
 ]]]
 
-We should define the class ==PProcedure==. It is for now straightforward. 
+We define the class ==PFunction== to represent functions. It is for now straightforward.
 
 [[[
-Object subclass: #PProcedure
+Object subclass: #PFunction
 	instanceVariableNames: 'parameters body'
 	classVariableNames: ''
 	package: 'Phsyche'
 ]]]
 
-Define the accessors for its instance variables. 
-Now we will extend the interpreter to create procedure. When an expression starts with a lambda keyword, we should return a procedure. 
+Define the accessors for its instance variables. Now we will extend the interpreter to create functions. When an expression starts with a lambda keyword, we should return a function.
 
 
 [[[
@@ -1003,7 +1002,7 @@ Phsyche >> eval: expression in: anEnvironment
 
 [[[
 Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
-	^ PProcedure new
+	^ PFunction new
 		parameters: expression second;
 		body: expression third
 ]]]
@@ -1011,7 +1010,7 @@ Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
 Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. 
 
 
-Now Phsyche supports the ''definition'' of procedures but not their application. Let us look at that now.
+Now Phsyche supports the ''definition'' of functions but not their application. Let us look at that now.
 
 !!! Function application
 
@@ -1020,19 +1019,19 @@ As we saw languages following Lisp like syntax follow the pattern ==(proc args)=
 Let us write tests to control such a behavior. 
 
 [[[
-PhsycheTest >> testLambdaProcedureExecution
+PhsycheTest >> testLambdaFunctionExecution
 	self assert: (ph parseAndEval: '((lambda (x) (* x x)) 3)') equals: 9.
 ]]]
 
 [[[
-PhsycheTest >> testProcedureExecution
+PhsycheTest >> testFunctionExecution
 	ph parseAndEval: '(define squared (lambda (x) (* x x)))'.
 	self assert: (ph parseAndEval: '(squared 3)') equals: 9
 ]]]
 
 Again we will implement function application step by step to understand the different aspects.
 
-What is important to see if that while executing a procedure body,  we have to have access to the environment, for example, to access primitive definitions. We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
+What is important to see if that while executing a function body,  we have to have access to the environment, for example, to access primitive definitions. We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
 
 
 !!!! A first function application
@@ -1064,9 +1063,8 @@ Phsyche >> eval: expression in: anEnvironment
 ]]]
 
 
-The following method is responsible for the function application: it evaluates its first element, which will return a procedure. 
-It creates an new environment with the parameters and the values of the arguments as values 
-and execute the body of the procedure within this environment. 
+The following method is responsible for the function application: it evaluates its first element, which will return a function.
+It creates an new environment with the parameters and the values of the arguments as values and execute the body of the function within this environment. 
 
 [[[
 Phsyche >> evalApplicativeOrder: expression in: anEnvironment
@@ -1082,12 +1080,12 @@ Phsyche >> evalApplicativeOrder: expression in: anEnvironment
 
 Note that for function application, the application environment (==newEnv==) has as parent the global interpreter environment. This will not be the case for closures as we will see later. 
 
-The method ==setEnvironmentForParameters:in:== is a simple helper function that creates a new environment based on values and the procedure parameter
+The method ==setEnvironmentForParameters:in:== is a simple helper function that creates a new environment based on values and the function parameter
 and an outer environment. 
 
 [[[
-PProcedure >> setEnvironmentForParameters: values in: outerEnvironment
-	"Create a new environment inheriting from the procedure one, for the current application."
+PFunction >> setEnvironmentForParameters: values in: outerEnvironment
+	"Create a new environment inheriting from the functino one, for the current application."
 	| applicationEnvironment |
 	applicationEnvironment := PEnvironment newFromKeys: self parameters andValues: values.
 	applicationEnvironment outerEnvironment: outerEnvironment.
@@ -1225,10 +1223,10 @@ What is important to see is that the function ==lambda (y)...== will be executed
 
 +Each function application creates an environment and is evaluated in its definition environment.>file://figures/lambda.pdf|width=60|label=envbinding+
 
-We add the environment instance variable to the class ==PProcedure== and set the current environment of the interpreter when creating the procedure in during execution of the lambda special form.
+We add the environment instance variable to the class ==PFunction== and set the current environment of the interpreter when creating the function in during execution of the lambda special form.
 
 [[[
-Object subclass: #Procedure
+Object subclass: #PFunction
 	instanceVariableNames: 'parameters body environment'
 	classVariableNames: ''
 	package: 'Pheme-Interpreters'
@@ -1237,13 +1235,13 @@ Object subclass: #Procedure
 
 [[[
 Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
-	^ PProcedure new
+	^ PFunction new
 		parameters: expression second;
 		body: expression third;
 		environment: anEnvironment
 ]]]
 
-Now we should revisit function evaluation to use the procedure environment instead of the one of the interpreter. 
+Now we should revisit function evaluation to use the function environment instead of the one of the interpreter. 
 
 [[[
 Phsyche >> evalApplicativeOrder: expression in: anEnvironment
@@ -1256,8 +1254,8 @@ Phsyche >> evalApplicativeOrder: expression in: anEnvironment
 	^ self eval: proc body in: newEnv
 ]]]
 
-Here we create the ==newEnv== using now the procedure environment as expressed here ==proc environment==.
-What is important to see is that with closure application is that the execution environment has as outer environment the one of the procedure. 
+Here we create the ==newEnv== using now the function environment as expressed here ==proc environment==.
+What is important to see is that with closure application is that the execution environment has as outer environment the one of the function. 
 
 [[[
 Phsyche >> evalApplicativeOrder: expression in: anEnvironment
