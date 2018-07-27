@@ -1092,7 +1092,7 @@ PFunction >> setEnvironmentForParameters: values in: outerEnvironment
 ]]]
 
 
-The class method ==newFromKeys:andValues:== only exist in Pharo 70. Here is its definition.
+The class method ==newFromKeys:andValues:== only exists in Pharo 70. Here is its definition.
 
 [[[
 Dictionary class >> newFromKeys: keys andValues: values
@@ -1105,7 +1105,6 @@ Dictionary class >> newFromKeys: keys andValues: values
 	^ dict
 ]]]
 
-
 With such an implementation, all our current tests should pass.
 Now we are ready to implement closures.
 
@@ -1116,23 +1115,27 @@ Now we are ready to implement closures.
 
 !! Adding closures to Phsyche
 
-Now we add closures to Phsyche. A closure is a function capturing the environment in which is defined. We start studying some examples and then we will implement on the closure semantics.
+In this chapter we add closures to Phsyche. A closure is a function capturing the environment in which it is defined. We start studying some examples and then we will implement on the closure semantics.
 
 !!! Studying a closure
 
-A closure is a function which contains a reference to the environment at its definition time. Since evaluating a lambda defines a temporary environment in which the parameters are bound, we can use this fact to create an environment local to a function. Let us have a look at a simple example:
+A closure is a function which contains a reference to the environment at its definition time. Since evaluating a lambda defines a ''temporary'' environment in which the parameters are bound, we use this fact to create an environment local to a function. Let us have a look at a simple example:
 
 [[[
-	(
-	 ((lambda (x)
-	   (lambda (y)
-	     (+ x y)))
-	  3)
-	 7)
+(
+ ((lambda (x)
+   (lambda (y)
+     (+ x y)))
+  3)
+ 7)
 >>> 10
 ]]]
 
-The following subexpression returns a function adding 3 to its parameter ==y==. 
+This expression creates a lambda expression and apply to 7.
+The execution of this lambda expression leads to the creation of another lambda expression 
+applied to 3. 
+
+The following subexpression returns a function ==lambda (y) ... == adding 3 to its parameter ==y==. 
 
 [[[
  ((lambda (x)
@@ -1141,10 +1144,10 @@ The following subexpression returns a function adding 3 to its parameter ==y==.
   3)
 ]]]
 
-This is why the previous expression result is 10. It does so by executing first function with 3 as parameter value for ==x==. This first execution creates an environment in which x is bound to 3. 
-Then it returns a function taking ==y== as parameter and referring to this environment. This is why when the ==(+x y)== body is executed ==x== is bound to 3.
+This is why the first expression result is 10. It does so by executing the first function with 3 as parameter value for ==x==. This first execution creates an environment in which x is bound to 3. 
+Then it returns a function taking ==y== as parameter and referring to this environment. This is why when ==(+ x y)== is executed, ==x== is bound to 3.
 
-The following expressions illustrate the same by defining a function ==y==
+The following expressions illustrate the same process by defining a function ==fy==
 and executing such a function. 
 
 [[[
@@ -1162,21 +1165,21 @@ and executing such a function.
 
 
 !!!! About let
-In fact defining local environment is so frequent that Scheme and Lisp languages offer the ==let== special form to define local environment as follow: 
+In fact defining local environments is so frequent that Scheme and Lisp languages offer the ==let== special form to define local environment as follow: 
 
 [[[
-(let ((x 3) (+ x x))
-	<=> 
+(let ((x 3) (+ x x)))
+	<=>
 ((lambda (x) (+ x x)) 3)
 ]]]
 
-You can add ==let== to Phsyche as an exercise. 
+You can add ==let== to Phsyche as an exercise.
 
 
 !!! Implementing closure
-The first point is that we should change the ==lambda== special form to refer to the environment in which it is defined. 
+To support closures, the first point is that we should change the ==lambda== special form to refer to the environment in which it is defined. Indeed at the time the function is created, it holds a reference to its defining environment.
 
-To test that ==lambda== effectively creates an environment. We can use this expression:
+To test that ==lambda== effectively creates an environment, we use this expression:
 
 [[[
 (define fy3 
@@ -1188,8 +1191,10 @@ To test that ==lambda== effectively creates an environment. We can use this expr
 (fy3 7)
 ]]]
 
-Here the nested function having y as parameter is just returning the value of x. And during the function execution, the value of x will be looked up in the created environment. Here is a first test. Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. 
- 
+Here the nested function (with  y as parameter) is simply returning the value of x. And during the function execution, the value of x will be looked up in the created environment. Here is a first test. 
+
+Note that it is difficult to test the fact that a function declaration defines a ''new'' environment without using function application. This is why we are using basic introspection to access the value of the variable.
+
 [[[
 PhsycheTest >> testSimpleClosureIntrospection
 
@@ -1204,6 +1209,7 @@ PhsycheTest >> testSimpleClosureIntrospection
 	self assert: (proc environment at: #x) equals: 3.
 ]]]
 
+The following test uses function application to verify the creation of the environment.
 
 [[[
 PhsycheTest >> testSimpleClosure
@@ -1253,8 +1259,7 @@ Phsyche >> evalApplicativeOrder: expression in: anEnvironment
 	^ self eval: proc body in: newEnv
 ]]]
 
-Here we create the ==newEnv== using now the function environment as expressed here ==proc environment==.
-What is important to see is that with closure application is that the execution environment has as outer environment the one of the function. 
+Here we create the ==newEnv== using the function environment as expressed by ==proc environment==. What is important to see with closure application is that the execution environment has as outer environment the one of the function. 
 
 [[[
 Phsyche >> evalApplicativeOrder: expression in: anEnvironment
@@ -1267,13 +1272,12 @@ Phsyche >> evalApplicativeOrder: expression in: anEnvironment
 	^ self eval: proc body in: newEnv
 ]]]
 
-We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and 
-conclude with this first version of Phsyche.
+We have implemented the most important aspect of closure semantics. Now we will add some support to modify environments and conclude with this first version of Phsyche.
 
 !!! Adding set! and begin
-To be able to experiment more with closures, we add support for changing the value a binding using the ==set!== special form and performing a sequence of instructions using the ==begin== special form.
+To be able to experiment more with closures, we add support for changing the value of a binding using the ==set!== special form and performing a sequence of instructions using the ==begin== special form.
 
-The following tests specify that the modification should happen in the environment defining the existing binding. In particular when a binding is not right in the current environment but in one of the outer environment, this is the environment that contains the binding that should be modified.
+The following tests specify that any modification should happen in the environment defining the existing binding. Notice that when a binding is not in the current environment but in one of the outer environment, this is the environment that contains the binding that should be modified.
 
 [[[
 PEnvironmentTest >> testSetAtRightLevel
@@ -1300,9 +1304,7 @@ PEnvironmentTest >> testSetLookup
 ]]]
 
 
-We implement a new method called ==lookupAt:put:== that 
-
-
+We implement a new method called ==lookupAt:put:== as follows:  
 
 [[[
 PEnvironment >> lookupAt: aKey put: aValue
@@ -1318,7 +1320,7 @@ PEnvironment >> lookupAt: aKey put: aValue
 ]]]
 
 
-Now we write a simple test checking that we can change the value of a binding. We will add more complex tests once we get ==begin== implemented.
+The following simple test checks that we can change the value of a binding. We will add more complex tests once we get the ==begin== primitives implemented.
 
 [[[
 PhsycheTest >> testEvalSimpleSet
@@ -1327,8 +1329,7 @@ PhsycheTest >> testEvalSimpleSet
 	self assert: (ph parseAndEval: 'x2') equals: 22.
 ]]]
 
-
-Now we are ready to implement ==set!==. 
+We are ready to implement ==set!==.
 
 [[[
 Phsyche >> eval: expression in: anEnvironment
@@ -1345,14 +1346,16 @@ Phsyche >> eval: expression in: anEnvironment
 
 [[[
 Phsyche >> evalSetSpecialForm: expression in: anEnvironment
-	anEnvironment lookupAt: expression second put: (self eval: expression third in: anEnvironment).
+	anEnvironment 
+		lookupAt: expression second 
+		put: (self eval: expression third in: anEnvironment).
 	^ #undefined
 ]]]
 
 Our tests should pass.
 
 !!! Implementing begin
-The special form ==begin== just evaluates one after the other the expressions in the list and return the value of the last one. The following tests are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
+The special form ==(begin exp1 exp2 ... expn)== evaluates one after another the expressions in the list and return the value of the last one. The following tests are super simple but makes sure that all the elements are evaluated and that the result of the last one is returned.
 
 [[[
 PhsycheTest >> testEvalBegin
@@ -1384,13 +1387,14 @@ Phsyche >> eval: expression in: anEnvironment
 [[[
 Phsyche >> evalBeginSpecialForm: expression in: anEnvironment
 	| res |
-	expression allButFirst do: [ :each | res := self eval: each in: anEnvironment ].
+	expression allButFirst 
+		do: [ :each | res := self eval: each in: anEnvironment ].
 	^ res
 ]]]
 
 !!!! A more complex test
 
-Now we can write a more complex test showing that we can change the binding of a variable created over function application.
+The following test is a bit more complex. It shows that we can change the binding of a variable created over function application. The expression ==(set x (+ x 2))== modifies the value of x created by the function application. This is why even if the first value of ==x== is 3, it is then latter sets to 5. Then when the function ==fy== is applied to 5, it returns 10.
 
 [[[
 PhsycheTest >> testEvalSetAtCorrectLevel
@@ -1408,12 +1412,12 @@ PhsycheTest >> testEvalSetAtCorrectLevel
 	self assert: (ph parseAndEval: '(fy3 5)') equals: 10
 ]]]
 
-We are done. 
+We are done.
 
 !!! Fun with closures
 
-Finally we can develop now little objects with an internal state. 
-We define a function whose captured environment will keep a number that can only be modified by the function. 
+We will develop little objects with an internal state.
+For this, we define a function whose captured environment will keep a number that can only be modified by the function.
 
 [[[
 (define makeAccount
@@ -1424,7 +1428,7 @@ We define a function whose captured environment will keep a number that can only
 				balance))))
 ]]]
 
-Now we can create several accounts each having its own state.
+We can create several accounts each having its own state.
 
 [[[
 (define ac1 (makeAccount 1000))
@@ -1438,7 +1442,8 @@ Now we can create several accounts each having its own state.
 !!! Conclusion
 
 This ends our naive implementation of a subset of Scheme.
-In the following chapter we revisit the implementation to reduce the complexity of the ==eval:in:== method.
+In the following chapter we revisit the implementation to reduce the complexity of the ==eval:in:== method. 
+
 
 
 !! Phemoo
