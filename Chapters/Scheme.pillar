@@ -1007,14 +1007,13 @@ Phsyche >> evalLambdaSpecialForm: expression in: anEnvironment
 		body: expression third
 ]]]
 
-Note that this implementation of ==lambda== is not correct since it does not keep a reference to its defining environment but we will do it later with closures. 
-
+Note that this implementation of ==lambda== is not correct as it does not keep a reference to its defining environment but we will do it later when we will introduce closures.
 
 Now Phsyche supports the ''definition'' of functions but not their application. Let us look at that now.
 
 !!! Function application
 
-As we saw languages following Lisp like syntax follow the pattern ==(proc args)== to mean that the function ==proc== is applied to the arguments ==args==. Such arguments are evaluated prior to be pass to the function.
+As we saw languages following Lisp-like syntax follow the pattern ==(proc args)== to mean that the function ==proc== is applied to the arguments ==args==. Such arguments are evaluated prior being passed to the function.
 
 Let us write tests to control such a behavior. 
 
@@ -1031,7 +1030,8 @@ PhsycheTest >> testFunctionExecution
 
 Again we will implement function application step by step to understand the different aspects.
 
-What is important to see if that while executing a function body,  we have to have access to the environment, for example, to access primitive definitions. We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
+What is important to see is that while executing a function body,  we have to have access to the interpreter environment, for example, to access primitive definitions. 
+We have to define a new environment where we bind the arguments to their values. Such an environment will only be used for one application. It will be the inner environment of Figure *@areaEnvi*.
 
 
 !!!! A first function application
@@ -1063,7 +1063,7 @@ Phsyche >> eval: expression in: anEnvironment
 ]]]
 
 
-The following method is responsible for the function application: it evaluates its first element, which will return a function.
+The following method ==evalApplicativeOrder:in:== is responsible for the function application: it evaluates its first element, which will return a function.
 It creates an new environment with the parameters and the values of the arguments as values and execute the body of the function within this environment. 
 
 [[[
@@ -1078,10 +1078,9 @@ Phsyche >> evalApplicativeOrder: expression in: anEnvironment
 	^ self eval: proc body in: newEnv
 ]]]
 
-Note that for function application, the application environment (==newEnv==) has as parent the global interpreter environment. This will not be the case for closures as we will see later. 
+Note that for function application, the application environment (==newEnv==) has  the global interpreter environment as parent. This will not be the case for closures as we will see later.
 
-The method ==setEnvironmentForParameters:in:== is a simple helper function that creates a new environment based on values and the function parameter
-and an outer environment. 
+The method ==setEnvironmentForParameters:in:== is a simple helper function that creates a new environment based on the function parameters and their values, and an outer environment.
 
 [[[
 PFunction >> setEnvironmentForParameters: values in: outerEnvironment
