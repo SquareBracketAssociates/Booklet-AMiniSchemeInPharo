@@ -1415,9 +1415,9 @@ PhsycheTest >> testEvalSetAtCorrectLevel
 We are done.
 
 !!! Fun with closures
+In this section, we will develop super naive and little account objects with an internal state, their balance. For this, we define a function whose captured environment will keep some state (a number) that can only be modified by an internal function. 
 
-We will develop little objects with an internal state.
-For this, we define a function whose captured environment will keep a number that can only be modified by the function.
+The function ==makeAccount== is a function with one parameter (==balance==). This function will return a function that has in its scope the ==balance== variable and will be able to modify it. 
 
 [[[
 (define makeAccount
@@ -1439,71 +1439,73 @@ We can create several accounts each having its own state.
 >>> 2300
 ]]]
 
+Using the same principle you can create objects having multiple functions accessing their internal state. For this the returned function should act as a case based and execute corresponding function. In fact we prefer to use real objects such as the ones in Pharo instead of simulating them.
+
 !!! Conclusion
 
 This ends our naive implementation of a subset of Scheme.
 In the following chapter we revisit the implementation to reduce the complexity of the ==eval:in:== method. 
 
+!! Phsycoo
 
-
-!! Phemoo
-
-This chapter is optional. In this alternate implementation we treat primitives and special forms the same way.
+This chapter is optional. In this alternate implementation we treat primitives and special forms the same way. Doing so we reduce the explicit switching logic of the ==eval:in:== function. We show that the core of an interpreter can take advantage of dynamic dispatch.
 Basically we create an object for each case and give the object the possibility to specify the full evaluation. 
 
 !!! Reusing tests
 
-To make sure that Phemoo is doing exactly the same as Phsyche we define a subclass to PhsycheTest. 
+To make sure that Phsycoo is doing exactly the same as Phsyche we define a subclass to ==PhsycheTest==. 
 
 [[[
-PhsycheTest subclass: #PhemooTest
+PhsycheTest subclass: #PhsycooTest
 	instanceVariableNames: ''
 	classVariableNames: ''
 	package: 'Pheme-Tests'
 ]]]
 
+In the setup we create an instance of the Phsycoo instead of Phsyche.
+
 [[[
-PhemooTest >> setUp
+PhsycooTest >> setUp
 	super setUp.
-	ph := Phemoo new
+	ph := Phsycoo new
 ]]]
 
-Now using the TestRunner you will be able to run all the tests on a Phemoo instance. 
+Now using the TestRunner you will be able to run all the tests on a Phsycoo instance. 
 
-!!! Phemoo interpreter
+!!! Phsycoo interpreter
 
-Phemoo has the same structure and initialization than Phsyche except that primitives and special form are represented by objects,  instances of their corresponding class in the PhemooPrimitives hierarchy as shown in Figure *@phemoo*
+Phsycoo has the same structure and initialization than Phsyche except that primitives and special forms are uniformly represented by objects, instances of their corresponding class in the PhsycooPrimitives hierarchy as shown in Figure *@Phsycoo*
 
 
 [[[
-Object subclass: #Phemoo
+Object subclass: #Phsycoo
 	instanceVariableNames: 'primitives environment'
 	classVariableNames: ''
-	package: 'Pheme-Phemoo'
+	package: 'Pheme-Phsycoo'
 ]]]
 
-+Special forms and primitives are handled in a uniform way.>file://figures/Phemoo.pdf|width=60|label=phemoo+
++Special forms and primitives are handled in a uniform way.>file://figures/Phsycoo.pdf|width=100|label=Phsycoo+
 
 
 !!! Modeling primitives and special form
 
-Primitives and special form are now expressed as subclasses of PhemooPrimitives.
+Primitives and special form are now expressed as subclasses of PhsycooPrimitives.
 Each subclass should define ==valueFor: aCollection with: anInterpreter environment: anEnvironment== and the class method ==tag==.
 
 [[[
-Object subclass: #PhemooPrimitives
+Object subclass: #PhsycooPrimitives
 	instanceVariableNames: ''
 	classVariableNames: ''
-	package: 'Pheme-Phemoo'
+	package: 'Pheme-Phsycoo'
 ]]]
 
 [[[
-PhemooPrimitives >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
+PhsycooPrimitives >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
 	^ self subclassResponsibility
 ]]]
 
 [[[
-PhemooPrimitives >> tag
+PhsycooPrimitives >> tag
 	^ self subclassResponsibility 
 ]]]
 
@@ -1512,10 +1514,10 @@ PhemooPrimitives >> tag
 For example plus is expressed as follows: 
 
 [[[
-PhemooPrimitives subclass: #PhPlus
+PhsycooPrimitives subclass: #PhPlus
 	instanceVariableNames: ''
 	classVariableNames: ''
-	package: 'Pheme-Phemoo'
+	package: 'Pheme-Phsycoo'
 ]]]
 
 [[[	
@@ -1532,10 +1534,10 @@ PhPlus >> valueFor: aCollection with: anInterpreter environment: anEnvironment
 !!! if special form
 
 [[[
-PhemooPrimitives subclass: #PhIf
+PhsycooPrimitives subclass: #PhIf
 	instanceVariableNames: ''
 	classVariableNames: ''
-	package: 'Pheme-Phemoo'
+	package: 'Pheme-Phsycoo'
 ]]]
 
 [[[
@@ -1560,9 +1562,9 @@ PhIf class >> tag
 Now we specialize the initialization of the interpreter as follows: 
 
 [[[
-Phemoo >> initializePrimitives
+Phsycoo >> initializePrimitives
 	
-	^ PhemooPrimitives allSubclasses 	
+	^ PhsycooPrimitives allSubclasses 	
 			do: [ :cls | primitives add: cls tag. 
 					environment at: cls tag put: cls new ]
 ]]]
@@ -1571,7 +1573,7 @@ Phemoo >> initializePrimitives
 And we are ready to have a simpler and more systematic evaluation logic. 
 
 [[[
-Phemoo >> eval: expression in: anEnvironment
+Phsycoo >> eval: expression in: anEnvironment
 	expression = #()
 		ifTrue: [ ^ expression ].
 	expression isSymbol
@@ -1585,7 +1587,7 @@ Phemoo >> eval: expression in: anEnvironment
 
 This method is the same as in Phsyche. 
 [[[
-Phemoo >> evaluateApplicativeOrder: expression in: anEnvironment
+Phsycoo >> evaluateApplicativeOrder: expression in: anEnvironment
 	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
 	| proc applicationEnv |
 	proc := self eval: expression first in: anEnvironment.
@@ -1598,7 +1600,7 @@ Phemoo >> evaluateApplicativeOrder: expression in: anEnvironment
 The following method is calling each primitive to execute itself in the environment.
 
 [[[
-Phemoo >> evaluateNonApplicativeOrder: expression in: anEnvironment
+Phsycoo >> evaluateNonApplicativeOrder: expression in: anEnvironment
 	^ (anEnvironment at: expression first)
 		valueFor: expression allButFirst
 		with: self
