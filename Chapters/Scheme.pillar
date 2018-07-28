@@ -1453,7 +1453,7 @@ Basically we create an object for each case and give the object the possibility 
 
 !!! Reusing tests
 
-To make sure that Phsycoo is doing exactly the same as Phsyche we define a subclass to ==PhsycheTest==. 
+To make sure that Phsycoo is implementing the same functionality than Phsyche, we define ==PhsycooTest== as a subclass of ==PhsycheTest==.
 
 [[[
 PhsycheTest subclass: #PhsycooTest
@@ -1484,13 +1484,12 @@ Object subclass: #Phsycoo
 	package: 'Pheme-Phsycoo'
 ]]]
 
-+Special forms and primitives are handled in a uniform way.>file://figures/Phsycoo.pdf|width=100|label=Phsycoo+
++Special forms and primitives are handled in a uniform way.>file://figures/Phemoo.pdf|width=100|label=Phsycoo+
 
 
-!!! Modeling primitives and special form
+!!! Modeling primitives and special forms
 
-Primitives and special form are now expressed as subclasses of PhsycooPrimitives.
-Each subclass should define ==valueFor: aCollection with: anInterpreter environment: anEnvironment== and the class method ==tag==.
+Primitives and special forms are now expressed as subclasses of the root class ==PhsycooPrimitives==. Each subclass should define ==valueFor: aCollection with: anInterpreter environment: anEnvironment== and the class method ==tag==.
 
 [[[
 Object subclass: #PhsycooPrimitives
@@ -1499,19 +1498,26 @@ Object subclass: #PhsycooPrimitives
 	package: 'Pheme-Phsycoo'
 ]]]
 
+Given a collection representing a primitive or special form application, an interpreter and an environment, the method ==valueFor:with:environment:== should return the corresponding value or modify the internal state of the interpreter.
+
 [[[
-PhsycooPrimitives >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
+PhsycooPrimitives >> valueFor: aCollection 
+	with: anInterpreter 
+	environment: anEnvironment 
+	
 	^ self subclassResponsibility
 ]]]
 
+A tag is a simple identifier that will be used to define the primitive or special form in the interpreter environment. For plus it will be ==#+==.
+
 [[[
-PhsycooPrimitives >> tag
+PhsycooPrimitives class >> tag
 	^ self subclassResponsibility 
 ]]]
 
-!!!! Plus primitives
+!!! The Plus primitive
 
-For example plus is expressed as follows: 
+For example the primitive ==plus== is expressed as follows: 
 
 [[[
 PhsycooPrimitives subclass: #PhPlus
@@ -1531,8 +1537,9 @@ PhPlus >> valueFor: aCollection with: anInterpreter environment: anEnvironment
 			+ (anInterpreter eval: aCollection second in: anEnvironment )
 ]]]
 
-!!! if special form
+!!! The if special form
 
+The special form ==if== is expressed as a subclass of ==PhsycooPrimitives==. 
 [[[
 PhsycooPrimitives subclass: #PhIf
 	instanceVariableNames: ''
@@ -1540,6 +1547,7 @@ PhsycooPrimitives subclass: #PhIf
 	package: 'Pheme-Phsycoo'
 ]]]
 
+The method ==valueFor:with:environment:== defines the semantics of condition. 
 [[[
 PhIf >> valueFor: aCollection with: anInterpreter environment: anEnvironment 
 	"aCollection: (if cond expr1 expr2)"
@@ -1558,8 +1566,8 @@ PhIf class >> tag
 ]]]
 
 !!! Initializing the environment
-
-Now we specialize the initialization of the interpreter as follows: 
+Once we have defined the primitives and special forms we should add them to the interpreter environment. 
+For this,  we specialize the initialization of the interpreter as follows: 
 
 [[[
 Phsycoo >> initializePrimitives
@@ -1569,8 +1577,11 @@ Phsycoo >> initializePrimitives
 					environment at: cls tag put: cls new ]
 ]]]
 
+This is where we see that the ==tag== method is used to populate interpreter environment.
+
 !!! Reconsidering eval:in:
 And we are ready to have a simpler and more systematic evaluation logic. 
+As you can see it is much more compact and regular. 
 
 [[[
 Phsycoo >> eval: expression in: anEnvironment
@@ -1585,7 +1596,24 @@ Phsycoo >> eval: expression in: anEnvironment
 				ifFalse: [ ^ self evaluateApplicativeOrder: expression in: anEnvironment] ]
 ]]]
 
-This method is the same as in Phsyche. 
+
+There are basically four cases
+- we get an empty array (list), we return it.
+- we get a symbol (value), we look it up and return it. 
+- we get self-evaluating entities such as #t, number, we return them.
+- we get a function application: we distinguish between applicative order (this is a user defined or primitive and special forms execution (non application order).
+
+The method ==evaluateNonApplicativeOrder:in:== dispatches to the associate instance. Any primitive or special forms are executed via this calling point. 
+
+[[[
+Phsycoo >> evaluateNonApplicativeOrder: expression in: anEnvironment
+	^ (anEnvironment at: expression first)
+		valueFor: expression allButFirst
+		with: self
+		environment: anEnvironment 
+]]]
+
+For applicative order, the method is the same as in Phsyche. 
 [[[
 Phsycoo >> evaluateApplicativeOrder: expression in: anEnvironment
 	"Now we have function application ((lambda (x) (+ x 3)) (+ 9 1))"
@@ -1597,19 +1625,8 @@ Phsycoo >> evaluateApplicativeOrder: expression in: anEnvironment
 	^ self eval: proc body in: applicationEnv.
 ]]]
 
-The following method is calling each primitive to execute itself in the environment.
-
-[[[
-Phsycoo >> evaluateNonApplicativeOrder: expression in: anEnvironment
-	^ (anEnvironment at: expression first)
-		valueFor: expression allButFirst
-		with: self
-		environment: anEnvironment 
-]]]
-
-We let to the use the redefinition of the primitives and special forms. There is nothing more than in Phsyche. It is just expressed differently.
-We let to the user the refactoring between the two interpreter to extract a common superclass.
+If we let aside the possibility to redefine primitives and special forms, there is nothing more than in Phsyche. It is just expressed differently.
 
 !!! Conclusion
 
-We have implemented a more modular implementation. Adding a new behavior is just defining a new subclass with two methods. 
+We have implemented a more modular implementation. Adding a new behavior is just defining a new subclass with two methods.
