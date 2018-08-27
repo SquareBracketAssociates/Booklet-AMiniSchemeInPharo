@@ -10,3 +10,5 @@ pharo-vm/
 
 pillar
 mustache
+*.log
+.DS_Store
