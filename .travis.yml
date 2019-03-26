@@ -24,12 +24,11 @@ install:
 script:
   - ./pillar/build/pillar build pdf
 
-deploy:
-- provider: bintray
-  file: .bintray.json
-  on:
-    repo: SquareBracketAssociates/Booklet-AMiniSchemeInPharo
-  skip_cleanup: true
-  user: ducasse
-  key:
-    secure: RHcD1NoMnAE3dutCUDsJ/qLTVlMcKHOiu1nYd5NnCXq+Ti9A3ARl4TgUWUn3KFuR2ND0cnLsaZDtO66ylxK5tM5r60HxUtFDMmWTqUQHg7DuwZD7s4ipavTC1elSHd5jcnKRXvhtyK5VbmzGyA+IdJkJ0ZDSFy7csbKK7qYSU5luKkRGvfKgTLNeWrwksEKDnSH1sS9b0MdbXLvMGuEkFsasICZswEmIYMq3iWPzrcHoRRmTfZu+TMSzSe91YusVohcF1/0HHb9zLSKq1pNZ0YI/AukVvE8Cy4Rdq1ImHVUSjrPFtCxyrTXYoUJELMrR+gHwg+jtG4nBbj/4IT5bUM1qSiYWNIzUW11O3S5nop1/UnR2dPqaGjUAffFpqny7YyGLDyDHvxMRQTtrhoRWCNrzEcaBG38xs32xdVWyIkkZCkZusbRRj1gU+WUzKH5AZdLjk8+9Q2pXKfxS+D+w3Ypx7zfOx4OfvsxA62UV9vjprOgKIH22NPYxgQ4SOMzgkWPELXZhDWSRGnImurb+4fkUz8ReVb3phKrR7z6S9xRtt45gonp8TSlf/Q8y2FDzrp6kxb2eOCfu4CLCEv1eJy9RBoMaDWyzc6+GL4Zbm0phkEpExPBL0Et0SihHdmL7+0IEseyjkaO9MlbN5ctRlJjJ41FL3l0ISTnS6iph0VA=
+after_success:
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - mv _result/pdf/book.pdf AMiniScheme-wip.pdf
+  - bash upload.sh AMiniScheme-wip.pdf
+
+branches:
+  except:
+    - /^(?i:continuous)$/
