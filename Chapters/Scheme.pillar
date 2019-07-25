@@ -1199,11 +1199,11 @@ Note that it is difficult to test the fact that a function declaration defines a
 PhsycheTest >> testSimpleClosureIntrospection
 
 	| proc |
-	ph eval: (ph parseAndEval: '(define fy3 
+	ph parseAndEval: '(define fy3 
   ((lambda (x)
    (lambda (y)
       x))
-  3))').
+  3))'.
 	proc := ph parseAndEval: '#fy3'.
 	self assert: proc parameters equals: #(y).
 	self assert: (proc environment at: #x) equals: 3.
