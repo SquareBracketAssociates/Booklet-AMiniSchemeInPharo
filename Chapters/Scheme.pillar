@@ -173,7 +173,7 @@ function execution.
 		((lambda (x)
 			(lambda (y)
 				(begin
-					(set x (+ x 2))
+					(set! x (+ x 2))
 					(+ x y))))
 			3))
 ]]]
@@ -915,7 +915,7 @@ PEnvironmentTest >> testLookupInFails
 	self should: [ inner at: #nodad ] raise: KeyNotFound
 ]]]
 
-We will improve the environment implementation to cover the definition of new binding but we will do that when we will add functionality to change the value of binding (i.e., when we will  implement the primitive ==set== for example).
+We will improve the environment implementation to cover the definition of new binding but we will do that when we will add functionality to change the value of binding (when we implement the primitive ==set!== for example).
 
 
 !!! Implement an environment class
@@ -1325,7 +1325,7 @@ The following simple test checks that we can change the value of a binding. We w
 [[[
 PhsycheTest >> testEvalSimpleSet
 	self assert: (ph parseAndEval: '(define x2 21') equals: #undefined.
-	self assert: (ph parseAndEval: '(set x2 22)') equals: #undefined.
+	self assert: (ph parseAndEval: '(set! x2 22)') equals: #undefined.
 	self assert: (ph parseAndEval: 'x2') equals: 22.
 ]]]
 
@@ -1364,7 +1364,7 @@ PhsycheTest >> testEvalBegin
 
 [[[
 PhsycheTest >> testEvalBeginSet
-	self assert: (ph parseAndEval:  '(begin (define x 1) (set x 2) x)') equals: 2
+	self assert: (ph parseAndEval:  '(begin (define x 1) (set! x 2) x)') equals: 2
 ]]]
 
 
@@ -1394,7 +1394,7 @@ Phsyche >> evalBeginSpecialForm: expression in: anEnvironment
 
 !!!! A more complex test
 
-The following test is a bit more complex. It shows that we can change the binding of a variable created over function application. The expression ==(set x (+ x 2))== modifies the value of x created by the function application. This is why even if the first value of ==x== is 3, it is then latter sets to 5. Then when the function ==fy== is applied to 5, it returns 10.
+The following test is a bit more complex. It shows that we can change the binding of a variable created over function application. The expression ==(set! x (+ x 2))== modifies the value of x created by the function application. This is why even if the first value of ==x== is 3, it is then latter sets to 5. Then when the function ==fy== is applied to 5, it returns 10.
 
 [[[
 PhsycheTest >> testEvalSetAtCorrectLevel
@@ -1404,7 +1404,7 @@ PhsycheTest >> testEvalSetAtCorrectLevel
 		((lambda (x)
 			(lambda (y)
 					(begin
-						(set x (+ x 2))
+						(set! x (+ x 2))
 						(+ x y))))
 				3))
 	').
