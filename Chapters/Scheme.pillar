@@ -451,7 +451,7 @@ Phsyche >> eval: expression in: anEnvironment
 		ifFalse: [ "returns literals boolean, string, number" ^ expression ]
 		ifTrue: [ 
 			expression first = #define
-				ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
+				ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ] ].
 ]]]
 
 When the expression is a variable definition, we define it. What you should see is that ==define== is a special form since it does not evaluate its first parameter only the second one.
@@ -507,7 +507,7 @@ Phsyche >> eval: expression in: anEnvironment
 			first = #define
 				ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ]
 			first = #quote
-				ifTrue: [ ^ expression second ]
+				ifTrue: [ ^ expression second ] ]
 ]]]
 
 !!! Setting up the primitives
@@ -618,7 +618,7 @@ Phsyche >> eval: expression in: anEnvironment
 				ifFalse: [ first = #define
 						ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
 					first = #quote
-						ifTrue: [ ^ expression second ]]
+						ifTrue: [ ^ expression second ] ] ]
 ]]]
 
 At this point our tests should all pass.
@@ -661,7 +661,7 @@ Phsyche >> smallerOrEqualBinding
 	^ #< -> [ :e :v | e <= v ]
 ]]]
 
-!!!! Adding substraction and division
+!!!! Adding subtraction and division
 
 [[[
 Phsyche >> minusBinding
@@ -792,11 +792,10 @@ Phsyche >> eval: expression in: anEnvironment
 				ifTrue: [ ^ self evalPrimitive: expression in: anEnvironment ]
 				ifFalse: [ first = #define
 						ifTrue: [ ^ self evalDefineSpecialForm: expression in: anEnvironment ].
-								first = #if
+					first = #if
 						ifTrue: [ ^ self evalIfSpecialForm: expression in: anEnvironment].
 					first = #quote
-						ifTrue: [ ^ expression second ]]
-					]
+						ifTrue: [ ^ expression second ] ] ]
 ]]]
 
 
