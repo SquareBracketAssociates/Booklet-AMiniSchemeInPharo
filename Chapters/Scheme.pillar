@@ -647,11 +647,6 @@ Phsyche >> isEqualBinding
 ]]]
 
 [[[
-Phsyche >> minusBinding
-	^ #- -> [ :e :v | e - v ]
-]]]
-
-[[[
 Phsyche >> smallerBinding
 	^ #< -> [ :e :v | e < v ]
 ]]]
