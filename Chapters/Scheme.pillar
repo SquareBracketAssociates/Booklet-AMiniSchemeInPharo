@@ -1324,7 +1324,7 @@ The following simple test checks that we can change the value of a binding. We w
 
 [[[
 PhsycheTest >> testEvalSimpleSet
-	self assert: (ph parseAndEval: '(define x2 21') equals: #undefined.
+	self assert: (ph parseAndEval: '(define x2 21')) equals: #undefined.
 	self assert: (ph parseAndEval: '(set x2 22)') equals: #undefined.
 	self assert: (ph parseAndEval: 'x2') equals: 22.
 ]]]
