@@ -1407,7 +1407,7 @@ PhsycheTest >> testEvalSetAtCorrectLevel
 						(set x (+ x 2))
 						(+ x y))))
 				3))
-	').
+	'.
 	proc := ph eval: #fy3.
 	self assert: (ph parseAndEval: '(fy3 5)') equals: 10
 ]]]
