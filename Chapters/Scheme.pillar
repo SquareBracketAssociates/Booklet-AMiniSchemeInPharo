@@ -950,6 +950,16 @@ PEnvironment >> at: aKey
 		ifNotNil: [ :v | v ]
 ]]]
 
+Let's modify Phsyche to use a ==PEnvironment== instead of a ==Dictionary== for the global environment:
+
+[[[
+Phsyche >> initialize
+	super initialize.
+	environment := PEnvironment new.
+	primitives := OrderedCollection new.
+	self initializeEnvBindings
+]]]
+
 Now we are ready to define what a function is.
 
 !!! Function definition
