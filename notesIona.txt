@@ -1,0 +1,52 @@
+--> Phsyche s'appuie sur le la classe Scanner de Pharo. Je n'ai pas réussi à trouver d'alternative viable sur les versions récentes de Pharo ( les classes MCScanner et RBScanner ne correspondaient pas aux résultats qu'on cherchait à obtenir, notamment pour parser les floats). J'ai donc utilisé Pharo 6.1. Peut-être serait-il possible de préciser quelle version utiliser ?
+
+
+--> dans "Handling primitive evaluation" (4.4) dans le code pour :
+
+    Phsyche >> eval: expression in: anEnvironment 
+
+Il manque un "]" à la fin.
+
+
+--> 6.2 Interpreting closure , le code suivant ne fonctionnait pas :
+"
+PhsycheTest >> testSimpleClosureIntrospection
+
+    | proc |
+    ph eval: (ph parseAndEval: '(define fy3 
+  ((lambda (x)
+   (lambda (y)
+      x))
+  3))').
+    proc := ph parseAndEval: '#fy3'.
+    self assert: proc parameters equals: #(y).
+    self assert: (proc environment at: #x) equals: 3.
+"
+Proposition :
+
+"
+PhsycheTest >> testSimpleClosureIntrospection
+
+    | proc |
+    ph parseAndEval: '(define fy3 
+  ((lambda (x)
+   (lambda (y)
+      x))
+  3))'.
+    proc := ph parseAndEval: '#fy3'.
+    self assert: proc parameters equals: #(y).
+    self assert: (proc environment at: #x) equals: 3.
+"
+
+
+
+--> 6.2 Interpreting closure à la fin la définition de Phsyche >> evalApplicativeOrder: expression in: anEnvironment apparait deux fois.
+
+-->  Je crois que la modification de l'initialisation de Phsyche pour utiliser la nouvelle classe d'environnement n'est pas dans les étapes expliquées. 
+
+Psyche >> initialize
+    super initialize.
+    environment := PEnvironment new.
+    primitives := OrderedCollection new.
+    self initializeEnvBidings
+
