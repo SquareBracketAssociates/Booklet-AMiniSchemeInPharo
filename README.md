@@ -1,6 +1,6 @@
 # Booklet-AMiniSchemeInPharo
 
-[![Download PDF](https://img.shields.io/badge/Download-PDF-9cf.svg)](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/releases/download/latest/DataFrame-wip.pdf)
+[![Download PDF](https://img.shields.io/badge/Download-PDF-9cf.svg)](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/releases/download/latest/AMiniScheme-wip.pdf)
 [![Centralized book generation](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/actions/workflows/main.yml/badge.svg)](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/actions/workflows/main.yml)
 
 
