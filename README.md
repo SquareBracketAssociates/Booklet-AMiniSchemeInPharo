@@ -1,9 +1,9 @@
 # Booklet-AMiniSchemeInPharo
+
+[![Download PDF](https://img.shields.io/badge/Download-PDF-9cf.svg)]([https://github.com/SquareBracketAssociates/Booklet-DataFrame/releases/download/latest/DataFrame-wip.pdf](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/releases/download/latest/DataFrame-wip.pdf))
+[![Centralized book generation](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/actions/workflows/main.yml/badge.svg)](https://github.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo/actions/workflows/main.yml)
+
+
 Describe the implementation  a little scheme interpreter in Pharo as pretext to play with a language interpreter.
 
-[![Build status][badge]][travis]
-
-[travis]: https://travis-ci.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo
-[badge]: https://travis-ci.com/SquareBracketAssociates/Booklet-AMiniSchemeInPharo.svg?branch=master
-
-The result from the latest successful Travis build can be found on the 'releases' pane of this page. 
+The result from the latest successful build can be found on the 'releases' pane of this page. 
